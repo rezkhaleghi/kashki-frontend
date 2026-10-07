@@ -10,6 +10,7 @@ import { searchUsers } from "@/lib/api/users";
 import { ApiError } from "@/lib/api/client";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/states";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 const giftSchema = z.object({
   amount: z.string().min(1).refine(
@@ -114,7 +115,7 @@ export default function GiftsPage() {
       {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{notice}</p>}
       {errorText(giftMutation.error) && <ErrorState message={errorText(giftMutation.error)} />}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section id="new-gift" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Send a general gift</h2>
         <form
           className="mt-4 grid gap-4 sm:grid-cols-2"
@@ -262,7 +263,7 @@ export default function GiftsPage() {
                   </p>
                   {gift.message && <p className="mt-2 text-sm text-slate-700">{gift.message}</p>}
                 </div>
-                <p className="text-lg font-semibold text-slate-900">{gift.amount} {gift.currency}</p>
+                <p className="text-lg font-semibold text-slate-900">{formatDecimalAmount(gift.amount)} {gift.currency}</p>
               </li>
             ))}
           </ul>

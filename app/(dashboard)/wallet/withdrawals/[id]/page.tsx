@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getWithdrawal } from "@/lib/api/withdrawals";
 import { ApiError } from "@/lib/api/client";
 import { ErrorState, LoadingState } from "@/components/shared/states";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -44,7 +45,7 @@ function WithdrawalDetailContent({ params }: PageProps) {
         <ErrorState message={errorText(withdrawalQuery.error)} />
       ) : (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-2xl font-semibold text-slate-900">{withdrawalQuery.data.amount} {withdrawalQuery.data.currency}</p>
+          <p className="text-2xl font-semibold text-slate-900">{formatDecimalAmount(withdrawalQuery.data.amount)} {withdrawalQuery.data.currency}</p>
           <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
             <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-slate-900">{withdrawalQuery.data.status}</dd></div>
             <div><dt className="text-slate-500">Created</dt><dd className="mt-1 font-medium text-slate-900">{dateLabel(withdrawalQuery.data.createdAt)}</dd></div>

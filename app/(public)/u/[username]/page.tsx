@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, use } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CakeSlice } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
 import { getPublicUserProfile } from "@/lib/api/users";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -53,9 +54,15 @@ function PublicUserContent({ params }: PageProps) {
             {profile.userName && <p className="mt-1 text-slate-500">@{profile.userName}</p>}
             {profile.bio && <p className="mt-4 max-w-xl text-slate-600">{profile.bio}</p>}
             {profile.birthday && (
-              <p className="mt-3 text-sm text-violet-700">
-                Birthday {profile.birthday}
-              </p>
+              <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50 to-emerald-50 px-5 py-3">
+                <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-white text-rose-600">
+                  <CakeSlice size={22} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">Birthday</p>
+                  <p className="text-lg font-bold text-emerald-900">{profile.birthday}</p>
+                </div>
+              </div>
             )}
 
             <div className="mt-8 space-y-6">
@@ -78,8 +85,18 @@ function PublicUserContent({ params }: PageProps) {
                             <p className="font-medium text-slate-900">{wish.title}</p>
                             {wish.description && <p className="mt-1 text-sm text-slate-600">{wish.description}</p>}
                           </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                           {wish.targetAmount && wish.currency && (
                             <WishProgress received={wish.receivedAmount} target={wish.targetAmount} currency={wish.currency} />
+                          )}
+                          {wish.status !== "COMPLETED" && (
+                            <Link
+                              href={`/lists/${list.id}#wish-${encodeURIComponent(wish.id)}`}
+                              className="inline-flex shrink-0 items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+                            >
+                              View & contribute
+                            </Link>
                           )}
                         </div>
                       </li>

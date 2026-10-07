@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDeposit, verifyDeposit } from "@/lib/api/deposits";
 import { ApiError } from "@/lib/api/client";
 import { ErrorState, LoadingState } from "@/components/shared/states";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -49,7 +50,7 @@ function DepositDetailContent({ params }: PageProps) {
         <ErrorState message={errorText(depositQuery.error)} />
       ) : (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-2xl font-semibold text-slate-900">{depositQuery.data.amount} {depositQuery.data.currency}</p>
+          <p className="text-2xl font-semibold text-slate-900">{formatDecimalAmount(depositQuery.data.amount)} {depositQuery.data.currency}</p>
           <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
             <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium text-slate-900">{depositQuery.data.status}</dd></div>
             <div><dt className="text-slate-500">Provider</dt><dd className="mt-1 font-medium text-slate-900">{depositQuery.data.provider}</dd></div>

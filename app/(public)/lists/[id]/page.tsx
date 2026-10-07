@@ -4,7 +4,8 @@ import Link from "next/link";
 import { FormEvent, Suspense, use, useMemo, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
 import { createGift, listAllWishGifts } from "@/lib/api/gifts";
@@ -23,7 +24,19 @@ type PageProps = {
 const wishSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().max(1000),
-  links: z.string(),
+  links: z.array(z.object({ url: z.string() })).max(10).refine(
+    (links) => links.every(({ url }) => {
+      const value = url.trim();
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }),
+    "Enter a valid http or https URL for each product link.",
+  ),
   targetAmount: z.string().refine(
     (value) =>
       value === "" ||
@@ -61,11 +74,14 @@ function WishEditor({
     defaultValues: {
       title: initial?.title ?? "",
       description: initial?.description ?? "",
-      links: initial?.links.join("\n") ?? "",
+      links: initial?.links.length
+        ? initial.links.map((url) => ({ url }))
+        : [{ url: "" }],
       targetAmount: initial?.targetAmount ?? "",
       currency: (initial?.currency as WishFormValues["currency"]) ?? "USD",
     },
   });
+  const linkFields = useFieldArray({ control: form.control, name: "links" });
 
   return (
     <form
@@ -88,10 +104,43 @@ function WishEditor({
           {["USD", "IRR", "EUR", "USDT", "BTC", "TRX"].map((currency) => <option key={currency}>{currency}</option>)}
         </select>
       </label>
-      <label className="text-sm font-medium text-slate-700">
-        Product links (up to 10, one per line)
-        <textarea className={`${inputClass} min-h-20`} {...form.register("links")} />
-      </label>
+      <fieldset className="space-y-3 sm:col-span-2">
+        <legend className="text-sm font-medium text-slate-700">Product links (up to 10)</legend>
+        <p className="text-xs text-slate-500">Add one URL per field. Long links can wrap naturally.</p>
+        {linkFields.fields.map((field, index) => (
+          <div key={field.id} className="flex items-start gap-2">
+            <textarea
+              placeholder="https://example.com/product"
+              className={`${inputClass} min-h-16 resize-y break-all`}
+              rows={2}
+              aria-label={`Product link ${index + 1}`}
+              {...form.register(`links.${index}.url`)}
+            />
+            {linkFields.fields.length > 1 && (
+              <button
+                type="button"
+                onClick={() => linkFields.remove(index)}
+                aria-label={`Remove product link ${index + 1}`}
+                className="mt-2 shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        {form.formState.errors.links?.root?.message && (
+          <p className="text-xs text-red-600">{form.formState.errors.links.root.message}</p>
+        )}
+        {linkFields.fields.length < 10 && (
+          <button
+            type="button"
+            onClick={() => linkFields.append({ url: "" })}
+            className="rounded-xl border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
+          >
+            Add another link
+          </button>
+        )}
+      </fieldset>
       <label className="text-sm font-medium text-slate-700 sm:col-span-2">
         Description
         <textarea className={`${inputClass} min-h-20`} {...form.register("description")} />
@@ -116,9 +165,10 @@ export default function PublicListPage({ params }: PageProps) {
 
 function PublicListContent({ params }: PageProps) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [editingWish, setEditingWish] = useState<string | null>(null);
-  const [addingWish, setAddingWish] = useState(false);
+  const [addingWish, setAddingWish] = useState(searchParams.get("addWish") === "true");
   const [selectedWish, setSelectedWish] = useState<WishEntity | null>(null);
   const [giftAmount, setGiftAmount] = useState("");
   const [giftCurrency, setGiftCurrency] = useState("USD");
@@ -180,7 +230,7 @@ function PublicListContent({ params }: PageProps) {
   const toWishInput = (values: WishFormValues) => ({
     title: values.title,
     description: values.description || undefined,
-    links: values.links.split(/\r?\n/).map((value) => value.trim()).filter(Boolean),
+    links: values.links.map(({ url }) => url.trim()).filter(Boolean),
     targetAmount: values.targetAmount || null,
     currency: values.targetAmount ? values.currency : null,
   });
@@ -323,7 +373,7 @@ function PublicListContent({ params }: PageProps) {
             const isEditing = editingWish === wish.id;
 
             return (
-              <article key={wish.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <article id={`wish-${wish.id}`} key={wish.id} className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 {isEditing ? (
                   <WishEditor
                     initial={wish}

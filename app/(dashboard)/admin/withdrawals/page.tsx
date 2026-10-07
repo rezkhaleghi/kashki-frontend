@@ -10,6 +10,7 @@ import {
 import type { Withdrawal } from "@/lib/types";
 import { ApiError } from "@/lib/api/client";
 import { EmptyState, ErrorState, LoadingState } from "@/components/shared/states";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 const statuses: Withdrawal["status"][] = ["PENDING", "APPROVED", "REJECTED", "COMPLETED"];
 
@@ -109,7 +110,7 @@ export default function AdminWithdrawalsPage() {
               <article key={withdrawal.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-lg font-semibold text-slate-900">{withdrawal.amount} {withdrawal.currency}</p>
+                    <p className="text-lg font-semibold text-slate-900">{formatDecimalAmount(withdrawal.amount)} {withdrawal.currency}</p>
                     <p className="mt-1 text-sm text-slate-600">User {withdrawal.userId}</p>
                     <p className="mt-1 break-all text-xs text-slate-500">Destination: {withdrawal.destination}</p>
                     <p className="mt-1 text-xs text-slate-500">Created {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(withdrawal.createdAt))}</p>

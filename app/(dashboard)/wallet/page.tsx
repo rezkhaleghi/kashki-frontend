@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api/client";
 import { createDeposit, listDeposits } from "@/lib/api/deposits";
 import { createWithdrawal, listWithdrawals } from "@/lib/api/withdrawals";
 import { getMyBalances } from "@/lib/api/users";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm";
@@ -128,17 +129,22 @@ export default function WalletPage() {
         {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</p>}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {balancesQuery.data?.data.map((balance) => (
-            <div key={balance.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm text-slate-500">{balance.currency} balance</p>
-              <p className="mt-3 text-3xl font-semibold text-violet-600">{balance.amount ?? balance._amount ?? "Unavailable"}</p>
-            </div>
-          ))}
+          {balancesQuery.data?.data.map((balance) => {
+            const amount = balance.amount ?? balance._amount;
+            return (
+              <div key={balance.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-sm text-slate-500">{balance.currency} balance</p>
+                <p className="mt-3 break-all text-2xl font-semibold text-violet-600 sm:text-3xl">
+                  {amount ? formatDecimalAmount(amount) : "Unavailable"}
+                </p>
+              </div>
+            );
+          })}
           {balancesQuery.isPending && <p className="text-sm text-slate-500">Loading balances…</p>}
         </section>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section id="deposit" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Deposit</h2>
             <p className="mt-1 text-sm text-slate-500">Development deposits use the backend sandbox provider.</p>
             <form className="mt-4 space-y-4" onSubmit={handleDeposit}>
@@ -184,7 +190,7 @@ export default function WalletPage() {
             </form>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section id="withdrawal" className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Withdraw</h2>
             <form className="mt-4 space-y-4" onSubmit={handleWithdrawal}>
               <label className="block text-sm font-medium text-slate-700">
@@ -239,7 +245,7 @@ export default function WalletPage() {
               {depositsQuery.data?.data.map((deposit) => (
                 <li key={deposit.id} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm">
                   <Link href={`/wallet/deposits/${deposit.id}`} className="min-w-0 flex-1 font-medium text-slate-800">
-                    {deposit.amount} {deposit.currency} · {deposit.status}
+                    {formatDecimalAmount(deposit.amount)} {deposit.currency} · {deposit.status}
                   </Link>
                   {deposit.status === "PENDING" && <span className="text-xs text-slate-500">Verification available</span>}
                 </li>
@@ -261,7 +267,7 @@ export default function WalletPage() {
               {withdrawalsQuery.data?.data.map((withdrawal) => (
                 <li key={withdrawal.id} className="rounded-xl bg-slate-50 p-3 text-sm">
                   <Link href={`/wallet/withdrawals/${withdrawal.id}`} className="block">
-                  {withdrawal.amount} {withdrawal.currency} · {withdrawal.status}
+                  {formatDecimalAmount(withdrawal.amount)} {withdrawal.currency} · {withdrawal.status}
                   </Link>
                 </li>
               ))}

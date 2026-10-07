@@ -242,7 +242,6 @@ function PublicListContent({ params }: PageProps) {
   const [giftMessage, setGiftMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [giftReview, setGiftReview] = useState(false);
-  const [notice, setNotice] = useState("");
   const [wishPage, setWishPage] = useState(1);
   const giftItButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -323,7 +322,6 @@ function PublicListContent({ params }: PageProps) {
     mutationFn: (values: WishFormValues) => createWish(id, toWishInput(values)),
     onSuccess: async () => {
       setAddingWish(false);
-      setNotice("Wish added.");
       await refreshWishes();
     },
   });
@@ -337,14 +335,12 @@ function PublicListContent({ params }: PageProps) {
     }) => updateWish(id, wishId, toWishInput(values)),
     onSuccess: async (wish) => {
       setEditingWish(null);
-      setNotice("Wish updated.");
       await refreshWishes(wish.id);
     },
   });
   const deleteMutation = useMutation({
     mutationFn: (wishId: string) => deleteWish(id, wishId),
     onSuccess: async (_, wishId) => {
-      setNotice("Wish deleted.");
       await refreshWishes(wishId);
     },
   });
@@ -365,9 +361,6 @@ function PublicListContent({ params }: PageProps) {
       setSelectedWish(null);
       setGiftAmount("");
       setGiftMessage("");
-      setNotice(
-        "Gift sent. The wish progress and recipient balance are being refreshed.",
-      );
       await Promise.all([
         refreshWishes(selectedWish?.id),
         queryClient.invalidateQueries({ queryKey: ["my-balances"] }),
@@ -384,7 +377,6 @@ function PublicListContent({ params }: PageProps) {
     event.preventDefault();
     if (!isAuthenticated) return;
     setGiftReview(true);
-    setNotice("");
   }
 
   function closeGiftForm() {
@@ -397,7 +389,9 @@ function PublicListContent({ params }: PageProps) {
     window.requestAnimationFrame(() => {
       if (wishId) {
         document
-          .querySelector<HTMLButtonElement>(`[data-contribute-wish="${wishId}"]`)
+          .querySelector<HTMLButtonElement>(
+            `[data-contribute-wish="${wishId}"]`,
+          )
           ?.focus();
       }
     });
@@ -410,11 +404,6 @@ function PublicListContent({ params }: PageProps) {
       : error
         ? "Could not connect to Kashki. Check that the backend is running."
         : "";
-  const combinedMutationError =
-    errorText(createMutation.error) ||
-    errorText(updateMutation.error) ||
-    errorText(deleteMutation.error);
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -457,18 +446,6 @@ function PublicListContent({ params }: PageProps) {
         ) : null}
       </header>
 
-      {notice && (
-        <p
-          role="status"
-          className={`rounded-xl border p-4 text-sm ${notice.toLowerCase().includes("sent") || (notice.endsWith(".") && !notice.startsWith("Request")) ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}
-        >
-          {notice}
-        </p>
-      )}
-      {combinedMutationError && <ErrorState message={combinedMutationError} />}
-      {giftMutation.error && (
-        <ErrorState message={errorText(giftMutation.error)} />
-      )}
       {wishMutationError && listQuery.data && (
         <ErrorState message={wishMutationError} />
       )}

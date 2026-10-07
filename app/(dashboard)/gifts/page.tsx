@@ -71,7 +71,6 @@ export default function GiftsPage() {
     avatar: string | null;
   } | null>(null);
   const [showReview, setShowReview] = useState(false);
-  const [notice, setNotice] = useState("");
   const [page, setPage] = useState(1);
   const form = useForm<GiftFormValues>({
     resolver: zodResolver(giftSchema),
@@ -128,7 +127,6 @@ export default function GiftsPage() {
       setShowReview(false);
       setRecipient(null);
       setUserInput("");
-      setNotice("Gift sent. The recipient’s wallet has been updated.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["gifts"] }),
         queryClient.invalidateQueries({ queryKey: ["my-balances"] }),
@@ -148,18 +146,6 @@ export default function GiftsPage() {
           See gifts you have received and given, or send a cash gift to someone.
         </p>
       </header>
-
-      {notice && (
-        <p
-          role="status"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
-        >
-          {notice}
-        </p>
-      )}
-      {errorText(giftMutation.error) && (
-        <ErrorState message={errorText(giftMutation.error)} />
-      )}
 
       <section
         id="new-gift"

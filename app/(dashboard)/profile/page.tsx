@@ -50,7 +50,6 @@ function formatFullBirthday(value: string) {
 export default function ProfilePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [notice, setNotice] = useState("");
   const [avatarError, setAvatarError] = useState("");
   const userQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
 
@@ -74,7 +73,6 @@ export default function ProfilePage() {
   const profileMutation = useMutation({
     mutationFn: updateMe,
     onSuccess: async () => {
-      setNotice("Profile saved.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["me"] }),
         queryClient.invalidateQueries({ queryKey: ["public-user"] }),
@@ -84,7 +82,6 @@ export default function ProfilePage() {
   const passwordMutation = useMutation({
     mutationFn: changePassword,
     onSuccess: () => {
-      setNotice("Password changed. Other sessions have been signed out.");
       passwordForm.reset();
     },
   });
@@ -100,25 +97,21 @@ export default function ProfilePage() {
     mutationFn: uploadAvatar,
     onSuccess: async () => {
       setAvatarError("");
-      setNotice("Profile photo updated.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["me"] }),
         queryClient.invalidateQueries({ queryKey: ["public-user"] }),
       ]);
     },
-    onError: (error: Error) => setAvatarError(getError(error)),
   });
   const deleteAvatarMutation = useMutation({
     mutationFn: deleteAvatar,
     onSuccess: async () => {
       setAvatarError("");
-      setNotice("Profile photo removed.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["me"] }),
         queryClient.invalidateQueries({ queryKey: ["public-user"] }),
       ]);
     },
-    onError: (error: Error) => setAvatarError(getError(error)),
   });
 
   if (userQuery.isPending)
@@ -131,9 +124,6 @@ export default function ProfilePage() {
     [user.firstName, user.lastName].filter(Boolean).join(" ") ||
     user.userName ||
     user.email;
-  const mutationError =
-    getError(profileMutation.error) || getError(passwordMutation.error);
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -154,15 +144,6 @@ export default function ProfilePage() {
         )}
       </header>
 
-      {notice && (
-        <p
-          role="status"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
-        >
-          {notice}
-        </p>
-      )}
-      {mutationError && <ErrorState message={mutationError} />}
       {avatarError && <ErrorState message={avatarError} />}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -185,7 +166,6 @@ export default function ProfilePage() {
                     event.target.value = "";
                     return;
                   }
-                  setNotice("");
                   avatarMutation.mutate(file);
                   event.target.value = "";
                 }}
@@ -196,7 +176,6 @@ export default function ProfilePage() {
                 type="button"
                 disabled={deleteAvatarMutation.isPending}
                 onClick={() => {
-                  setNotice("");
                   deleteAvatarMutation.mutate();
                 }}
                 className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
@@ -221,7 +200,6 @@ export default function ProfilePage() {
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={profileForm.handleSubmit((values) => {
-            setNotice("");
             profileMutation.mutate({
               firstName: values.firstName || null,
               lastName: values.lastName || null,
@@ -301,7 +279,6 @@ export default function ProfilePage() {
         <form
           className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end"
           onSubmit={passwordForm.handleSubmit((values) => {
-            setNotice("");
             passwordMutation.mutate(values);
           })}
         >
@@ -334,12 +311,6 @@ export default function ProfilePage() {
         <p className="mt-1 text-sm text-slate-600">
           Sign out of Kashki on this device.
         </p>
-        {logoutMutation.isError && (
-          <p role="alert" className="mt-3 text-sm text-red-700">
-            {getError(logoutMutation.error) ||
-              "Could not log out. Please try again."}
-          </p>
-        )}
         <button
           type="button"
           disabled={logoutMutation.isPending}

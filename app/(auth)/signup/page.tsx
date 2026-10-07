@@ -7,7 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { ApiError } from "@/lib/api/client";
 import { requestOtp, signUp } from "@/lib/api/auth";
 import { formatOtpCountdown, useOtpCooldown } from "@/lib/use-otp-cooldown";
 
@@ -32,36 +31,23 @@ export default function SignUpPage() {
     startCooldown,
     applyApiCooldown,
   } = useOtpCooldown(email);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleRequestOtp() {
-    setError("");
-    setNotice("");
     setSendingOtp(true);
     try {
       const requestEmail = form.getValues("email").trim().toLowerCase();
       const response = await requestOtp({ email: requestEmail });
-      setNotice(
-        `${response.message}. Check your inbox and spam folder for the code.`,
-      );
       startCooldown(response.resendAfterSeconds, requestEmail);
-    } catch (cause) {
-      applyApiCooldown(cause, form.getValues("email"));
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Could not connect to Kashki. Check that the backend is running and try again.",
-      );
+    } catch (error) {
+      applyApiCooldown(error, form.getValues("email"));
     } finally {
       setSendingOtp(false);
     }
   }
 
   async function handleSubmit(values: SignUpFormValues) {
-    setError("");
     setSubmitting(true);
 
     try {
@@ -69,12 +55,8 @@ export default function SignUpPage() {
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/dashboard");
       router.refresh();
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Could not connect to Kashki. Check that the backend is running and try again.",
-      );
+    } catch {
+      return;
     } finally {
       setSubmitting(false);
     }
@@ -148,20 +130,10 @@ export default function SignUpPage() {
                 : "Send verification code"}
           </button>
           <div aria-live="polite" className="space-y-1">
-            {notice && (
-              <p role="status" className="text-sm text-emerald-700">
-                {notice}
-              </p>
-            )}
             {cooldownSeconds > 0 && (
               <p className="text-sm text-slate-600">
                 You can request another code in{" "}
                 {formatOtpCountdown(cooldownSeconds)}.
-              </p>
-            )}
-            {error && (
-              <p role="alert" className="text-sm text-red-600">
-                {error}
               </p>
             )}
           </div>

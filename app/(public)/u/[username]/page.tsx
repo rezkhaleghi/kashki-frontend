@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, Suspense, use, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CakeSlice, ChevronRight, Sparkles } from "lucide-react";
@@ -232,6 +233,7 @@ function PublicDonationSection({
   profileId: string;
   profileName: string;
 }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const userQuery = useQuery({
     queryKey: ["me"],
@@ -243,7 +245,6 @@ function PublicDonationSection({
   const [currency, setCurrency] = useState("USD");
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
-  const [notice, setNotice] = useState("");
   const mutation = useMutation({
     mutationFn: () =>
       createGift({
@@ -254,7 +255,6 @@ function PublicDonationSection({
         anonymous,
       }),
     onSuccess: async () => {
-      setNotice(`Donation sent to ${profileName}.`);
       setIsOpen(false);
       setAmount("");
       setMessage("");
@@ -268,70 +268,70 @@ function PublicDonationSection({
   });
   const validAmount =
     /^\d+(?:\.\d+)?$/.test(amount) && !/^0+(?:\.0+)?$/.test(amount);
-  const mutationError =
-    mutation.error instanceof ApiError
-      ? mutation.error.message
-      : mutation.error
-        ? "Could not send the donation. Check your wallet balance and try again."
-        : "";
-
-  if (userQuery.data?.id === profileId) return null;
-
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setNotice("");
     mutation.mutate();
   }
 
+  async function handleDonateClick() {
+    if (isOpen) {
+      setIsOpen(false);
+      setAmount("");
+      setMessage("");
+      setAnonymous(false);
+      mutation.reset();
+      return;
+    }
+
+    mutation.reset();
+
+    try {
+      const session = userQuery.data
+        ? { data: userQuery.data, error: null }
+        : await userQuery.refetch();
+
+      if (session.data) {
+        setIsOpen(true);
+        return;
+      }
+
+      if (
+        session.error &&
+        !(session.error instanceof ApiError && session.error.status === 401)
+      ) {
+        return;
+      }
+
+      router.push("/login");
+    } catch {
+      return;
+    }
+  }
+
   return (
-    <section className="border-b border-emerald-900/10 bg-white/55 px-5 py-6 sm:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-2xl font-semibold text-emerald-950">
+    <section className="relative my-5 overflow-hidden rounded-2xl border border-rose-200/80 bg-[linear-gradient(105deg,_#fff0f5_0%,_#fff_50%,_#e9f8f2_100%)] p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-5">
+        <div className="max-w-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-rose-700">
+            A little extra birthday magic
+          </p>
+          <h2 className="mt-1 font-serif text-2xl font-semibold text-emerald-950">
             Send a birthday donation
           </h2>
-          <p className="mt-1 max-w-xl text-sm text-slate-600">
-            Give any amount directly to {profileName}’s Kashki wallet.
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Give any amount directly to {profileName}’s Kashki wallet, with or
+            without a wish list. Add a personal note or keep your gift
+            anonymous.
           </p>
         </div>
-        {userQuery.isPending ? (
-          <span className="text-sm text-slate-500">Checking your account…</span>
-        ) : userQuery.data ? (
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen((current) => !current);
-              mutation.reset();
-              setNotice("");
-            }}
-            className="rounded-full bg-[#d52d69] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#b92259]"
-          >
-            {isOpen ? "Close" : "DONATE"}
-          </button>
-        ) : userQuery.error instanceof ApiError &&
-          userQuery.error.status !== 401 ? (
-          <p role="alert" className="text-sm text-rose-700">
-            Could not verify your session. Refresh and try again.
-          </p>
-        ) : (
-          <Link
-            href="/login"
-            className="rounded-full bg-[#d52d69] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#b92259]"
-          >
-            Log in to donate
-          </Link>
-        )}
+        <button
+          type="button"
+          onClick={handleDonateClick}
+          className="rounded-full bg-[#d52d69] px-6 py-3 text-sm font-bold text-white shadow-sm shadow-rose-900/15 transition hover:bg-[#b92259]"
+        >
+          {isOpen ? "Close" : "DONATE"}
+        </button>
       </div>
-      {notice && (
-        <p role="status" className="mt-4 text-sm font-medium text-emerald-800">
-          {notice}
-        </p>
-      )}
-      {mutationError && (
-        <p role="alert" className="mt-4 text-sm text-rose-700">
-          {mutationError}
-        </p>
-      )}
       {isOpen && userQuery.data && (
         <form
           onSubmit={handleSubmit}

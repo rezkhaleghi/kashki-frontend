@@ -7,7 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { ApiError } from "@/lib/api/client";
 import { loginOtp, loginPassword, requestOtp } from "@/lib/api/auth";
 import { formatOtpCountdown, useOtpCooldown } from "@/lib/use-otp-cooldown";
 
@@ -34,14 +33,11 @@ export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<"password" | "otp">(
     "password",
   );
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const normalizedEmail = email.trim().toLowerCase();
 
   async function handleSubmit(values: LoginFormValues) {
-    setError("");
     setSubmitting(true);
 
     try {
@@ -53,33 +49,21 @@ export default function LoginPage() {
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/dashboard");
       router.refresh();
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Could not connect to Kashki. Check that the backend is running and try again.",
-      );
+    } catch {
+      return;
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleRequestOtp() {
-    setError("");
-    setNotice("");
     setSendingOtp(true);
     try {
       const requestEmail = form.getValues("email").trim().toLowerCase();
       const response = await requestOtp({ email: requestEmail });
-      setNotice(response.message);
       startCooldown(response.resendAfterSeconds, requestEmail);
-    } catch (cause) {
-      applyApiCooldown(cause, form.getValues("email"));
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Could not connect to Kashki. Check that the backend is running and try again.",
-      );
+    } catch (error) {
+      applyApiCooldown(error, form.getValues("email"));
     } finally {
       setSendingOtp(false);
     }
@@ -169,20 +153,10 @@ export default function LoginPage() {
                     : "Send login code"}
               </button>
               <div aria-live="polite" className="space-y-1">
-                {notice && (
-                  <p role="status" className="text-sm text-emerald-700">
-                    {notice}
-                  </p>
-                )}
                 {cooldownSeconds > 0 && (
                   <p className="text-sm text-slate-600">
                     You can request another code in{" "}
                     {formatOtpCountdown(cooldownSeconds)}.
-                  </p>
-                )}
-                {error && (
-                  <p role="alert" className="text-sm text-red-600">
-                    {error}
                   </p>
                 )}
               </div>
@@ -207,17 +181,6 @@ export default function LoginPage() {
                 />
               </div>
             </>
-          )}
-
-          {loginMethod === "password" && notice && (
-            <p role="status" className="text-sm text-emerald-700">
-              {notice}
-            </p>
-          )}
-          {loginMethod === "password" && error && (
-            <p role="alert" className="text-sm text-red-600">
-              {error}
-            </p>
           )}
 
           <button

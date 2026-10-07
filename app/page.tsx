@@ -84,8 +84,8 @@ export default function HomePage() {
               & good company
             </p>
             <h1 className="max-w-2xl font-serif text-5xl font-semibold leading-[1.08] text-emerald-950 sm:text-6xl">
-              Make room for the things that make them{" "}
-              <span className="text-violet-700">glow.</span>
+              Tell people what you really want for your{" "}
+              <span className="text-violet-700">BirthDay.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
               A softer way to share birthday wishes, gather around a gift, and

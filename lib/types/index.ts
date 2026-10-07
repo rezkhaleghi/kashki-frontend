@@ -42,6 +42,7 @@ export type UserSearchResult = {
   avatar: string | null;
   bio: string | null;
   email: string;
+  birthday: string | null;
   createdAt: string;
 };
 

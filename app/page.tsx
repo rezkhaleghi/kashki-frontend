@@ -1,88 +1,235 @@
+"use client";
+
 import Link from "next/link";
-import { Gift } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight, Gift, Heart, Sparkles } from "lucide-react";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { getMe } from "@/lib/api/users";
+
+const faqs = [
+  {
+    question: "How do birthday wishlists work?",
+    answer:
+      "Add the things you love to a list, then share your profile so friends can choose a wish or contribute together.",
+  },
+  {
+    question: "Can I keep a gift anonymous?",
+    answer:
+      "Yes. When sending a general gift, choose the anonymous option and your name will not be shown to the recipient.",
+  },
+  {
+    question: "Who can see my birthday and lists?",
+    answer:
+      "You choose each list’s visibility, and your profile settings let you hide the year of your birthday.",
+  },
+];
 
 export default function HomePage() {
-  return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_85%_20%,_rgba(251,113,159,0.14),_transparent_28%),radial-gradient(circle_at_15%_5%,_rgba(34,197,94,0.12),_transparent_32%),linear-gradient(to_bottom,_#fff,_#f7faf5)] text-slate-900">
-      <div className="mx-auto flex max-w-6xl flex-col px-6 py-10 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between rounded-full border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 text-sm font-semibold text-white">
-              K
-            </div>
-            <div>
-              <p className="text-sm font-semibold tracking-[0.15em] text-slate-500 uppercase">
-                Kashki
-              </p>
-            </div>
-          </div>
+  const userQuery = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+    retry: false,
+  });
+  const user = userQuery.data;
+  const displayName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.userName ||
+    "Your profile";
 
-          <nav className="flex items-center gap-2 text-sm text-slate-600 md:gap-6">
-            <Link href="/login" className="rounded-full px-3 py-2 transition hover:text-slate-900">
-              Login
-            </Link>
-            <Link href="/signup" className="rounded-full bg-violet-600 px-3 py-2 font-medium text-white transition hover:bg-violet-500 md:bg-transparent md:px-0 md:font-normal md:text-slate-600">
-              Sign up
-            </Link>
-            <Link href="/dashboard" className="hidden rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 md:block">
-              Dashboard
-            </Link>
+  return (
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_5%_12%,_rgba(255,221,231,0.85),_transparent_34%),radial-gradient(ellipse_at_92%_24%,_rgba(184,239,224,0.72),_transparent_34%),linear-gradient(155deg,_#fffaf8_0%,_#fff_52%,_#f0fbf7_100%)] text-slate-900">
+      <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-9 lg:px-10">
+        <header className="flex items-center justify-between gap-4 border-b border-emerald-900/10 pb-5">
+          <Link
+            href="/"
+            className="flex items-center gap-3"
+            aria-label="Kashki home"
+          >
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#d52d69] font-serif text-xl font-bold text-white shadow-md shadow-rose-900/10">
+              K
+            </span>
+            <span className="font-serif text-2xl font-semibold text-emerald-950">
+              Kashki
+            </span>
+          </Link>
+          <nav aria-label="Main navigation" className="flex items-center gap-2">
+            {user ? (
+              <Link
+                href="/profile"
+                className="flex max-w-52 items-center gap-2 rounded-full border border-emerald-900/10 bg-white/75 py-1.5 pl-1.5 pr-4 text-sm font-medium text-emerald-950 shadow-sm transition hover:bg-white"
+              >
+                <UserAvatar src={user.avatar} name={displayName} size="sm" />
+                <span className="truncate">{displayName}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-full bg-[#d52d69] px-5 py-2.5 text-xs font-bold tracking-[0.12em] text-white shadow-md shadow-rose-900/15 transition hover:bg-[#b92259]"
+              >
+                SIGNIN
+              </Link>
+            )}
           </nav>
         </header>
 
-        <section className="grid items-center gap-12 pb-16 pt-16 lg:grid-cols-[1.2fr_0.8fr] lg:pt-24">
-          <div>
-            <p className="mb-4 inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-              Birthday wishlist platform
+        <section className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
+          <div className="relative z-10">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose-200/80 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700 shadow-sm">
+              <Sparkles aria-hidden="true" size={15} /> A little magic for every
+              birthday
             </p>
-
-            <h1 className="max-w-xl text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl">
-              Know what they want.
-              <span className="mt-2 block text-violet-600">Make their birthday better.</span>
+            <h1 className="max-w-2xl font-serif text-5xl font-semibold leading-[1.08] text-emerald-950 sm:text-6xl">
+              Make room for the things that make them{" "}
+              <span className="text-[#d52d69]">glow.</span>
             </h1>
-
-            <p className="mt-6 max-w-xl text-lg text-slate-600">
-              Help friends discover the perfect present, fund a wish, and send a birthday gift with a wallet designed for joyful giving.
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+              A softer way to share birthday wishes, gather around a gift, and
+              make someone feel wonderfully seen.
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/signup" className="rounded-full bg-violet-600 px-6 py-3 font-medium text-white shadow-lg shadow-violet-500/20 transition hover:bg-violet-500">
-                Create your birthday list
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href={user ? "/dashboard" : "/login"}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-800 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:bg-emerald-900"
+              >
+                {user ? "Open your dashboard" : "SIGNIN"}
+                <ArrowUpRight aria-hidden="true" size={17} />
               </Link>
-              <Link href="/login" className="rounded-full border border-slate-200 bg-white px-6 py-3 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                Log in
-              </Link>
+              <a
+                href="#how-it-works"
+                className="rounded-full border border-emerald-900/15 bg-white/70 px-6 py-3 font-medium text-emerald-950 transition hover:bg-white"
+              >
+                A peek inside
+              </a>
             </div>
-
+            <div className="mt-9 flex items-center gap-3 text-sm text-emerald-900/70">
+              <span className="flex -space-x-2" aria-hidden="true">
+                <span className="size-8 rounded-full border-2 border-white bg-rose-300" />
+                <span className="size-8 rounded-full border-2 border-white bg-emerald-300" />
+                <span className="size-8 rounded-full border-2 border-white bg-amber-200" />
+              </span>
+              <span>Made for thoughtful people and their favorite people</span>
+            </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-            <div className="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-emerald-50 p-6">
-              <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
-                  <Gift aria-hidden="true" size={22} />
-                </span>
-                <p className="text-sm font-medium text-violet-700">Thoughtful giving, made simple</p>
+          <div
+            id="how-it-works"
+            className="relative mx-auto w-full max-w-lg scroll-mt-8"
+          >
+            <div
+              aria-hidden="true"
+              className="absolute -inset-5 -rotate-3 rounded-[2.5rem] border border-rose-200/70 bg-[#f9dbe5]/70"
+            />
+            <div className="relative rounded-[2rem] border border-emerald-900/10 bg-white/90 p-6 shadow-[0_28px_80px_-40px_rgba(31,92,75,0.4)] sm:p-8">
+              <div className="flex items-center justify-between gap-4 border-b border-emerald-900/10 pb-5">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-12 items-center justify-center rounded-2xl bg-[#dff5ee] text-emerald-800">
+                    <Gift aria-hidden="true" size={23} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                      A birthday wishbook
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl font-semibold text-emerald-950">
+                      The good things list
+                    </h2>
+                  </div>
+                </div>
+                <Heart
+                  aria-hidden="true"
+                  className="shrink-0 text-[#d52d69]"
+                  size={21}
+                />
               </div>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-900">A better way to celebrate</h2>
-              <div className="mt-6 space-y-4">
+              <p className="mt-5 text-sm leading-6 text-slate-600">
+                A few lovely things, saved for a day worth celebrating.
+              </p>
+              <div className="mt-5 divide-y divide-emerald-900/10">
                 {[
-                  { number: "01", title: "Make a birthday list", text: "Collect wishes and choose who can see each list." },
-                  { number: "02", title: "Give together", text: "Contribute toward a wish or send a cash gift." },
-                  { number: "03", title: "Keep track", text: "Follow gifts and wallet activity in one place." },
+                  {
+                    number: "01",
+                    title: "Gather your wishes",
+                    text: "Keep favorite finds together in one warm little place.",
+                  },
+                  {
+                    number: "02",
+                    title: "Give a little magic",
+                    text: "Choose a gift or join friends in making a wish happen.",
+                  },
+                  {
+                    number: "03",
+                    title: "Celebrate together",
+                    text: "Send a note, share a surprise, make the day theirs.",
+                  },
                 ].map((step) => (
-                  <div key={step.number} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
-                    <span className="font-semibold text-violet-600">{step.number}</span>
+                  <div
+                    key={step.number}
+                    className="flex gap-4 py-4 first:pt-1 last:pb-1"
+                  >
+                    <span className="font-serif text-lg font-semibold text-[#d52d69]">
+                      {step.number}
+                    </span>
                     <div>
-                      <p className="font-medium text-slate-900">{step.title}</p>
-                      <p className="mt-1 text-sm text-slate-600">{step.text}</p>
+                      <p className="font-semibold text-emerald-950">
+                        {step.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-5 text-slate-600">
+                        {step.text}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
+              <div className="mt-5 flex items-center gap-2 rounded-xl bg-[#e4f6f0] px-4 py-3 text-sm font-medium text-emerald-900">
+                <Sparkles aria-hidden="true" size={16} /> Small gestures, big
+                birthday energy.
+              </div>
             </div>
           </div>
         </section>
+
+        <section
+          className="border-t border-emerald-900/10 py-12 sm:py-16"
+          aria-labelledby="faq-title"
+        >
+          <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-rose-700">
+                The little details
+              </p>
+              <h2
+                id="faq-title"
+                className="mt-2 font-serif text-3xl font-semibold text-emerald-950"
+              >
+                A few things you might wonder
+              </h2>
+            </div>
+            <div className="divide-y divide-emerald-900/10 border-y border-emerald-900/10">
+              {faqs.map((faq) => (
+                <details key={faq.question} className="group py-4">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-emerald-950 marker:hidden">
+                    {faq.question}
+                    <span
+                      aria-hidden="true"
+                      className="font-serif text-xl text-[#d52d69] transition-transform group-open:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-900/10 py-6 text-sm text-emerald-900/60">
+          <Link href="/" className="font-serif font-semibold text-emerald-950">
+            Kashki
+          </Link>
+          <p>Make their birthday a little more theirs.</p>
+        </footer>
       </div>
     </main>
   );

@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, Suspense, use, useMemo, useState } from "react";
+import {
+  FormEvent,
+  Suspense,
+  use,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -236,6 +244,7 @@ function PublicListContent({ params }: PageProps) {
   const [giftReview, setGiftReview] = useState(false);
   const [notice, setNotice] = useState("");
   const [wishPage, setWishPage] = useState(1);
+  const giftItButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const listQuery = useQuery({
     queryKey: ["list", id],
@@ -251,6 +260,13 @@ function PublicListContent({ params }: PageProps) {
     queryFn: getMe,
     retry: false,
   });
+  const isAuthenticated = Boolean(userQuery.data);
+
+  useEffect(() => {
+    if (selectedWish && !giftReview && isAuthenticated) {
+      giftItButtonRef.current?.focus();
+    }
+  }, [giftReview, isAuthenticated, selectedWish]);
 
   const targetedWishes = useMemo(
     () =>
@@ -366,8 +382,25 @@ function PublicListContent({ params }: PageProps) {
 
   function handleGift(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isAuthenticated) return;
     setGiftReview(true);
     setNotice("");
+  }
+
+  function closeGiftForm() {
+    const wishId = selectedWish?.id;
+    setSelectedWish(null);
+    setGiftAmount("");
+    setGiftMessage("");
+    setGiftReview(false);
+    giftMutation.reset();
+    window.requestAnimationFrame(() => {
+      if (wishId) {
+        document
+          .querySelector<HTMLButtonElement>(`[data-contribute-wish="${wishId}"]`)
+          ?.focus();
+      }
+    });
   }
 
   const error = listQuery.error;
@@ -526,14 +559,15 @@ function PublicListContent({ params }: PageProps) {
                           </p>
                         )}
                         {wish.links.length > 0 && (
-                          <ul className="mt-3 space-y-1">
+                          <ul className="mt-3 max-w-full space-y-1">
                             {wish.links.map((link) => (
                               <li key={link}>
                                 <a
                                   href={link}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="break-all text-sm text-violet-700 underline"
+                                  title={link}
+                                  className="block max-w-full truncate text-sm text-violet-700 underline"
                                 >
                                   {link}
                                 </a>
@@ -567,14 +601,17 @@ function PublicListContent({ params }: PageProps) {
                           ))}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {!completed && (
+                        {!completed && selectedWish?.id !== wish.id && (
                           <button
                             type="button"
+                            data-contribute-wish={wish.id}
                             onClick={() => {
                               setSelectedWish(wish);
                               setGiftCurrency(wish.currency ?? "USD");
                               setGiftAmount("");
+                              setGiftMessage("");
                               setGiftReview(false);
+                              giftMutation.reset();
                             }}
                             className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white"
                           >
@@ -682,7 +719,14 @@ function PublicListContent({ params }: PageProps) {
                                 onClick={() => setGiftReview(false)}
                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm"
                               >
-                                Cancel
+                                Edit gift
+                              </button>
+                              <button
+                                type="button"
+                                onClick={closeGiftForm}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm"
+                              >
+                                Close
                               </button>
                               <button
                                 type="button"
@@ -698,19 +742,30 @@ function PublicListContent({ params }: PageProps) {
                           </div>
                         ) : (
                           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+                            {isAuthenticated ? (
+                              <button
+                                ref={giftItButtonRef}
+                                type="submit"
+                                disabled={completed}
+                                className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                              >
+                                GIFT IT
+                              </button>
+                            ) : (
+                              <Link
+                                href="/login"
+                                className="text-sm font-medium text-violet-700"
+                              >
+                                Log in to give
+                              </Link>
+                            )}
                             <button
-                              type="submit"
-                              disabled={completed}
-                              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium disabled:opacity-50"
+                              type="button"
+                              onClick={closeGiftForm}
+                              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium"
                             >
-                              Review gift
+                              Close
                             </button>
-                            <Link
-                              href="/login"
-                              className="text-sm font-medium text-violet-700"
-                            >
-                              Log in to give
-                            </Link>
                           </div>
                         )}
                       </form>

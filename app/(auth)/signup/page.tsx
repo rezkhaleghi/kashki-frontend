@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { ApiError } from "@/lib/api/client";
 import { requestOtp, signUp } from "@/lib/api/auth";
+import { formatOtpCountdown, useOtpCooldown } from "@/lib/use-otp-cooldown";
 
 const signUpSchema = z.object({
   userName: z.string().min(3).max(50),
@@ -26,6 +27,11 @@ export default function SignUpPage() {
     defaultValues: { userName: "", email: "", password: "", otp: "" },
   });
   const email = useWatch({ control: form.control, name: "email" });
+  const {
+    remainingSeconds: cooldownSeconds,
+    startCooldown,
+    applyApiCooldown,
+  } = useOtpCooldown(email);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -36,9 +42,14 @@ export default function SignUpPage() {
     setNotice("");
     setSendingOtp(true);
     try {
-      const response = await requestOtp({ email: form.getValues("email") });
-      setNotice(`${response.message}. Check your inbox and spam folder for the code.`);
+      const requestEmail = form.getValues("email").trim().toLowerCase();
+      const response = await requestOtp({ email: requestEmail });
+      setNotice(
+        `${response.message}. Check your inbox and spam folder for the code.`,
+      );
+      startCooldown(response.resendAfterSeconds, requestEmail);
     } catch (cause) {
+      applyApiCooldown(cause, form.getValues("email"));
       setError(
         cause instanceof ApiError
           ? cause.message
@@ -72,13 +83,25 @@ export default function SignUpPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">Kashki</p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Create account</h1>
-        <p className="mt-2 text-sm text-slate-600">Start your birthday list in minutes.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+          Kashki
+        </p>
+        <h1 className="mt-3 text-3xl font-semibold text-slate-900">
+          Create account
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Start your birthday list in minutes.
+        </p>
 
-        <form className="mt-6 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+        <form
+          className="mt-6 space-y-4"
+          onSubmit={form.handleSubmit(handleSubmit)}
+        >
           <div>
-            <label htmlFor="username" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="username"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               Username
             </label>
             <input
@@ -95,7 +118,10 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               Email
             </label>
             <input
@@ -111,15 +137,40 @@ export default function SignUpPage() {
 
           <button
             type="button"
-            disabled={!email || sendingOtp}
+            disabled={!email || sendingOtp || cooldownSeconds > 0}
             onClick={handleRequestOtp}
             className="w-full rounded-xl border border-violet-200 px-4 py-2.5 font-medium text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {sendingOtp ? "Sending code…" : "Send verification code"}
+            {sendingOtp
+              ? "Sending code…"
+              : cooldownSeconds > 0
+                ? `Resend in ${formatOtpCountdown(cooldownSeconds)}`
+                : "Send verification code"}
           </button>
+          <div aria-live="polite" className="space-y-1">
+            {notice && (
+              <p role="status" className="text-sm text-emerald-700">
+                {notice}
+              </p>
+            )}
+            {cooldownSeconds > 0 && (
+              <p className="text-sm text-slate-600">
+                You can request another code in{" "}
+                {formatOtpCountdown(cooldownSeconds)}.
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
+          </div>
 
           <div>
-            <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               Password
             </label>
             <input
@@ -135,7 +186,10 @@ export default function SignUpPage() {
           </div>
 
           <div>
-            <label htmlFor="otp" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="otp"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               Verification code
             </label>
             <input
@@ -152,9 +206,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-
           <button
             type="submit"
             disabled={submitting}
@@ -166,7 +217,10 @@ export default function SignUpPage() {
 
         <p className="mt-5 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-violet-600 hover:text-violet-500">
+          <Link
+            href="/login"
+            className="font-medium text-violet-600 hover:text-violet-500"
+          >
             Log in
           </Link>
         </p>

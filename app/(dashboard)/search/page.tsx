@@ -50,7 +50,7 @@ export default function SearchPage() {
       <header>
         <p className="text-sm text-slate-500">Discover</p>
         <h1 className="mt-1 text-3xl font-semibold text-slate-900">
-          Find someone
+          Find someone and Gift them
         </h1>
         <p className="mt-2 text-sm text-slate-600">
           Search by name, username, or exact email address.

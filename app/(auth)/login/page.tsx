@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { ApiError } from "@/lib/api/client";
 import { loginOtp, loginPassword, requestOtp } from "@/lib/api/auth";
+import { formatOtpCountdown, useOtpCooldown } from "@/lib/use-otp-cooldown";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -25,11 +26,19 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "", otp: "" },
   });
   const email = useWatch({ control: form.control, name: "email" });
-  const [loginMethod, setLoginMethod] = useState<"password" | "otp">("password");
+  const {
+    remainingSeconds: cooldownSeconds,
+    startCooldown,
+    applyApiCooldown,
+  } = useOtpCooldown(email);
+  const [loginMethod, setLoginMethod] = useState<"password" | "otp">(
+    "password",
+  );
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const normalizedEmail = email.trim().toLowerCase();
 
   async function handleSubmit(values: LoginFormValues) {
     setError("");
@@ -60,9 +69,12 @@ export default function LoginPage() {
     setNotice("");
     setSendingOtp(true);
     try {
-      const response = await requestOtp({ email: form.getValues("email") });
+      const requestEmail = form.getValues("email").trim().toLowerCase();
+      const response = await requestOtp({ email: requestEmail });
       setNotice(response.message);
+      startCooldown(response.resendAfterSeconds, requestEmail);
     } catch (cause) {
+      applyApiCooldown(cause, form.getValues("email"));
       setError(
         cause instanceof ApiError
           ? cause.message
@@ -76,9 +88,13 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">Kashki</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">
+          Kashki
+        </p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-900">Log in</h1>
-        <p className="mt-2 text-sm text-slate-600">Welcome back. Pick up where you left off.</p>
+        <p className="mt-2 text-sm text-slate-600">
+          Welcome back. Pick up where you left off.
+        </p>
 
         <div className="mt-6 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm">
           <button
@@ -97,9 +113,15 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+        <form
+          className="mt-4 space-y-4"
+          onSubmit={form.handleSubmit(handleSubmit)}
+        >
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
               Email
             </label>
             <input
@@ -115,7 +137,10 @@ export default function LoginPage() {
           {loginMethod === "password" ? (
             <>
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Password
                 </label>
                 <input
@@ -133,14 +158,39 @@ export default function LoginPage() {
             <>
               <button
                 type="button"
-                disabled={!email || sendingOtp}
+                disabled={!normalizedEmail || sendingOtp || cooldownSeconds > 0}
                 onClick={handleRequestOtp}
                 className="w-full rounded-xl border border-violet-200 px-4 py-2.5 font-medium text-violet-700 transition hover:bg-violet-50 disabled:opacity-50"
               >
-                {sendingOtp ? "Sending code…" : "Send login code"}
+                {sendingOtp
+                  ? "Sending code…"
+                  : cooldownSeconds > 0
+                    ? `Resend in ${formatOtpCountdown(cooldownSeconds)}`
+                    : "Send login code"}
               </button>
+              <div aria-live="polite" className="space-y-1">
+                {notice && (
+                  <p role="status" className="text-sm text-emerald-700">
+                    {notice}
+                  </p>
+                )}
+                {cooldownSeconds > 0 && (
+                  <p className="text-sm text-slate-600">
+                    You can request another code in{" "}
+                    {formatOtpCountdown(cooldownSeconds)}.
+                  </p>
+                )}
+                {error && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {error}
+                  </p>
+                )}
+              </div>
               <div>
-                <label htmlFor="otp" className="mb-2 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="otp"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
                   Verification code
                 </label>
                 <input
@@ -159,15 +209,27 @@ export default function LoginPage() {
             </>
           )}
 
-          {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {loginMethod === "password" && notice && (
+            <p role="status" className="text-sm text-emerald-700">
+              {notice}
+            </p>
+          )}
+          {loginMethod === "password" && error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
             disabled={submitting}
             className="w-full rounded-xl bg-violet-600 px-4 py-2.5 font-medium text-white transition hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60"
           >
-            {submitting ? "Logging in…" : loginMethod === "password" ? "Continue" : "Log in with code"}
+            {submitting
+              ? "Logging in…"
+              : loginMethod === "password"
+                ? "Continue"
+                : "Log in with code"}
           </button>
         </form>
 
@@ -180,7 +242,10 @@ export default function LoginPage() {
 
         <p className="mt-5 text-center text-sm text-slate-600">
           Need an account?{" "}
-          <Link href="/signup" className="font-medium text-violet-600 hover:text-violet-500">
+          <Link
+            href="/signup"
+            className="font-medium text-violet-600 hover:text-violet-500"
+          >
             Sign up
           </Link>
         </p>

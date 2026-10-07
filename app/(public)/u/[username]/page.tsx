@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, use } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { FormEvent, Suspense, use, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CakeSlice, ChevronRight, Sparkles } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
-import { getPublicUserProfile } from "@/lib/api/users";
+import { createGift } from "@/lib/api/gifts";
+import { getMe, getPublicUserProfile } from "@/lib/api/users";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { WishProgress } from "@/components/shared/wish-progress";
 import { LoadingState } from "@/components/shared/states";
@@ -134,6 +135,11 @@ function PublicUserContent({ params }: PageProps) {
               </div>
             </section>
 
+            <PublicDonationSection
+              profileId={profile.id}
+              profileName={fullName || profile.userName || username}
+            />
+
             <div className="mt-5">
               {profile.lists.map((list) => (
                 <section
@@ -216,5 +222,175 @@ function PublicUserContent({ params }: PageProps) {
         </footer>
       </div>
     </main>
+  );
+}
+
+function PublicDonationSection({
+  profileId,
+  profileName,
+}: {
+  profileId: string;
+  profileName: string;
+}) {
+  const queryClient = useQueryClient();
+  const userQuery = useQuery({
+    queryKey: ["me"],
+    queryFn: getMe,
+    retry: false,
+  });
+  const [isOpen, setIsOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [message, setMessage] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
+  const [notice, setNotice] = useState("");
+  const mutation = useMutation({
+    mutationFn: () =>
+      createGift({
+        recipientUserId: profileId,
+        amount,
+        currency,
+        message: message || undefined,
+        anonymous,
+      }),
+    onSuccess: async () => {
+      setNotice(`Donation sent to ${profileName}.`);
+      setIsOpen(false);
+      setAmount("");
+      setMessage("");
+      setAnonymous(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-balances"] }),
+        queryClient.invalidateQueries({ queryKey: ["gifts"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+    },
+  });
+  const validAmount =
+    /^\d+(?:\.\d+)?$/.test(amount) && !/^0+(?:\.0+)?$/.test(amount);
+  const mutationError =
+    mutation.error instanceof ApiError
+      ? mutation.error.message
+      : mutation.error
+        ? "Could not send the donation. Check your wallet balance and try again."
+        : "";
+
+  if (userQuery.data?.id === profileId) return null;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNotice("");
+    mutation.mutate();
+  }
+
+  return (
+    <section className="border-b border-emerald-900/10 bg-white/55 px-5 py-6 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-emerald-950">
+            Send a birthday donation
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-slate-600">
+            Give any amount directly to {profileName}’s Kashki wallet.
+          </p>
+        </div>
+        {userQuery.isPending ? (
+          <span className="text-sm text-slate-500">Checking your account…</span>
+        ) : userQuery.data ? (
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen((current) => !current);
+              mutation.reset();
+              setNotice("");
+            }}
+            className="rounded-full bg-[#d52d69] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#b92259]"
+          >
+            {isOpen ? "Close" : "DONATE"}
+          </button>
+        ) : userQuery.error instanceof ApiError &&
+          userQuery.error.status !== 401 ? (
+          <p role="alert" className="text-sm text-rose-700">
+            Could not verify your session. Refresh and try again.
+          </p>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-full bg-[#d52d69] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#b92259]"
+          >
+            Log in to donate
+          </Link>
+        )}
+      </div>
+      {notice && (
+        <p role="status" className="mt-4 text-sm font-medium text-emerald-800">
+          {notice}
+        </p>
+      )}
+      {mutationError && (
+        <p role="alert" className="mt-4 text-sm text-rose-700">
+          {mutationError}
+        </p>
+      )}
+      {isOpen && userQuery.data && (
+        <form
+          onSubmit={handleSubmit}
+          className="mt-5 grid gap-4 border-t border-emerald-900/10 pt-5 sm:grid-cols-2"
+        >
+          <label className="text-sm font-medium text-slate-700">
+            Amount
+            <input
+              required
+              type="number"
+              min="0.01"
+              step="any"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2.5"
+            />
+          </label>
+          <label className="text-sm font-medium text-slate-700">
+            Currency
+            <select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2.5"
+            >
+              {["USD", "IRR", "EUR", "USDT", "BTC", "TRX"].map((value) => (
+                <option key={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700 sm:col-span-2">
+            Message (optional)
+            <input
+              maxLength={1000}
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2.5"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={anonymous}
+              onChange={(event) => setAnonymous(event.target.checked)}
+              className="size-4 accent-rose-600"
+            />
+            Give anonymously
+          </label>
+          <p className="text-xs text-slate-500 sm:col-span-2">
+            The donation is sent from your Kashki wallet.
+          </p>
+          <button
+            type="submit"
+            disabled={!validAmount || mutation.isPending}
+            className="rounded-full bg-emerald-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900 disabled:opacity-50 sm:justify-self-start"
+          >
+            {mutation.isPending ? "Sending…" : "Send donation"}
+          </button>
+        </form>
+      )}
+    </section>
   );
 }

@@ -2,6 +2,9 @@ import { apiClient } from "@/lib/api/client";
 import type { ApiMessage, User } from "@/lib/types";
 
 export type RequestOtpInput = { email: string };
+export type RequestOtpResponse = ApiMessage & {
+  resendAfterSeconds: number;
+};
 export type SignUpInput = {
   userName: string;
   email: string;
@@ -13,7 +16,7 @@ export type LoginOtpInput = { email: string; otp: string };
 export type ChangePasswordInput = { password: string };
 
 export async function requestOtp(input: RequestOtpInput) {
-  return apiClient<ApiMessage>("/auth/request-otp", {
+  return apiClient<RequestOtpResponse>("/auth/request-otp", {
     method: "POST",
     body: JSON.stringify({ email: input.email }),
   });

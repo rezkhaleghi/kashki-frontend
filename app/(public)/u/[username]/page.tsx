@@ -1,20 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense, use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
 import { getPublicUserProfile } from "@/lib/api/users";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { WishProgress } from "@/components/shared/wish-progress";
+import { LoadingState } from "@/components/shared/states";
 
 type PageProps = {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 };
 
 export default function PublicUserPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<LoadingState label="Loading profile…" />}>
+      <PublicUserContent params={params} />
+    </Suspense>
+  );
+}
+
+function PublicUserContent({ params }: PageProps) {
+  const { username } = use(params);
   const profileQuery = useQuery({
-    queryKey: ["public-user", params.username],
-    queryFn: () => getPublicUserProfile(params.username),
+    queryKey: ["public-user", username],
+    queryFn: () => getPublicUserProfile(username),
   });
   const profile = profileQuery.data;
   const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ");
@@ -34,10 +45,10 @@ export default function PublicUserPage({ params }: PageProps) {
           <>
             <p className="text-sm text-slate-500">Public profile</p>
             <div className="mt-4">
-              <UserAvatar src={profile.avatar} name={fullName || profile.userName || params.username} size="lg" />
+              <UserAvatar src={profile.avatar} name={fullName || profile.userName || username} size="lg" />
             </div>
             <h1 className="mt-3 text-4xl font-semibold text-slate-900">
-              {fullName || `@${profile.userName ?? params.username}`}
+              {fullName || `@${profile.userName ?? username}`}
             </h1>
             {profile.userName && <p className="mt-1 text-slate-500">@{profile.userName}</p>}
             {profile.bio && <p className="mt-4 max-w-xl text-slate-600">{profile.bio}</p>}

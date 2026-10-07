@@ -21,6 +21,19 @@ function fromScaled(value: bigint, scale: number) {
   return fraction ? `${whole}.${fraction}` : whole.toString();
 }
 
+export function formatDecimalAmount(value: string) {
+  if (!/^-?\d+(?:\.\d+)?$/.test(value)) {
+    throw new Error(`Invalid decimal amount: ${value}`);
+  }
+  const isNegative = value.startsWith("-");
+  const [wholePart, fraction = ""] = (isNegative ? value.slice(1) : value).split(".");
+  const whole = wholePart.replace(/^0+(?=\d)/, "");
+  const groupedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const trimmedFraction = fraction.replace(/0+$/, "");
+  const amount = trimmedFraction ? `${groupedWhole}.${trimmedFraction}` : groupedWhole;
+  return isNegative ? `-${amount}` : amount;
+}
+
 export function sumDecimalStrings(values: string[]) {
   const scale = values.reduce((max, value) => Math.max(max, decimalParts(value).scale), 0);
   const total = values.reduce((sum, value) => sum + atScale(value, scale), BigInt(0));

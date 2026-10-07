@@ -1,28 +1,38 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense, use } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDeposit, verifyDeposit } from "@/lib/api/deposits";
 import { ApiError } from "@/lib/api/client";
 import { ErrorState, LoadingState } from "@/components/shared/states";
 
-type PageProps = { params: { id: string } };
+type PageProps = { params: Promise<{ id: string }> };
 
 function errorText(error: Error | null) {
   return error instanceof ApiError ? error.message : error ? "Could not connect to Kashki." : "";
 }
 
 export default function DepositDetailPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<LoadingState label="Loading deposit…" />}>
+      <DepositDetailContent params={params} />
+    </Suspense>
+  );
+}
+
+function DepositDetailContent({ params }: PageProps) {
+  const { id } = use(params);
   const queryClient = useQueryClient();
   const depositQuery = useQuery({
-    queryKey: ["deposit", params.id],
-    queryFn: () => getDeposit(params.id),
+    queryKey: ["deposit", id],
+    queryFn: () => getDeposit(id),
   });
   const verifyMutation = useMutation({
-    mutationFn: () => verifyDeposit(params.id),
+    mutationFn: () => verifyDeposit(id),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["deposit", params.id] }),
+        queryClient.invalidateQueries({ queryKey: ["deposit", id] }),
         queryClient.invalidateQueries({ queryKey: ["deposits"] }),
         queryClient.invalidateQueries({ queryKey: ["my-balances"] }),
       ]);

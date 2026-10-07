@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
-import { logout } from "@/lib/api/auth";
 import { listReceivedGifts } from "@/lib/api/gifts";
 import { createList, listMyLists } from "@/lib/api/lists";
 import { listNotifications } from "@/lib/api/notifications";
 import { getMyBalances, getMe } from "@/lib/api/users";
+import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 function errorText(error: Error | null) {
   if (!error) return "";
@@ -19,7 +18,6 @@ function errorText(error: Error | null) {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [showNewList, setShowNewList] = useState(false);
   const [listName, setListName] = useState("");
@@ -30,7 +28,12 @@ export default function DashboardPage() {
   const balancesQuery = useQuery({ queryKey: ["my-balances"], queryFn: () => getMyBalances() });
   const notificationsQuery = useQuery({
     queryKey: ["notifications"],
-    queryFn: () => listNotifications({ limit: 5 }),
+    queryFn: () => listNotifications({ limit: 5, channel: "IN_APP" }),
+  });
+  const unreadNotificationsQuery = useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: () => listNotifications({ limit: 100, channel: "IN_APP" }),
+    refetchInterval: 60_000,
   });
   const giftsQuery = useQuery({
     queryKey: ["gifts", "received", "recent"],
@@ -48,15 +51,6 @@ export default function DashboardPage() {
     onError: (error: Error) => setListError(errorText(error)),
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-    onSuccess: async () => {
-      await queryClient.clear();
-      router.push("/login");
-      router.refresh();
-    },
-  });
-
   function handleCreateList(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setListError("");
@@ -68,10 +62,15 @@ export default function DashboardPage() {
     errorText(listsQuery.error) ||
     errorText(balancesQuery.error) ||
     errorText(notificationsQuery.error) ||
+    errorText(unreadNotificationsQuery.error) ||
     errorText(giftsQuery.error);
   const balances = balancesQuery.data?.data ?? [];
   const firstBalance = balances[0];
   const firstBalanceAmount = firstBalance?.amount ?? firstBalance?._amount;
+  const unreadNotificationCount =
+    unreadNotificationsQuery.data?.data.filter(
+      (notification) => notification.status === "SENT" && !notification.readAt,
+    ).length ?? 0;
   const name = [userQuery.data?.firstName, userQuery.data?.lastName]
     .filter(Boolean)
     .join(" ");
@@ -92,23 +91,12 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/wallet" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-              Wallet
-            </Link>
             <button
               type="button"
               onClick={() => setShowNewList((value) => !value)}
-              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-medium text-white"
             >
               New list
-            </button>
-            <button
-              type="button"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-              className="rounded-full px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-            >
-              {logoutMutation.isPending ? "Logging out…" : "Log out"}
             </button>
           </div>
         </header>
@@ -144,35 +132,31 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Wallet balance</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">
-              {firstBalance ? `${firstBalanceAmount ?? "Unavailable"} ${firstBalance.currency}` : balancesQuery.isPending ? "Loading…" : "—"}
+            <p className="mt-3 break-all text-2xl font-semibold leading-tight text-slate-900 sm:text-3xl">
+              {firstBalance ? `${firstBalanceAmount ? formatDecimalAmount(firstBalanceAmount) : firstBalanceAmount ?? "Unavailable"} ${firstBalance.currency}` : balancesQuery.isPending ? "Loading…" : "—"}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Lists</p>
+          <Link href="/notifications" className="rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-white p-5 shadow-sm transition hover:border-rose-200">
+            <p className="text-sm font-medium text-rose-800">Unread notifications</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">
-              {listsQuery.data ? listsQuery.data.total : listsQuery.isPending ? "Loading…" : "—"}
+              {unreadNotificationsQuery.isPending ? "…" : unreadNotificationCount}
             </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Notifications</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">
-              {notificationsQuery.data ? notificationsQuery.data.total : notificationsQuery.isPending ? "Loading…" : "—"}
-            </p>
-          </div>
+            <p className="mt-1 text-sm text-slate-500">See what your friends have shared</p>
+          </Link>
         </div>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            { href: "/lists", title: "Manage wishes", detail: "Create and organize lists" },
+            { href: "/lists", title: "My wishlists", detail: "Create and organize lists" },
             { href: "/search", title: "Find someone", detail: "Discover public wishlists" },
             { href: "/wallet", title: "Add funds", detail: "Top up your Kashki wallet" },
             { href: "/gifts", title: "Send a gift", detail: "Give toward a wish or directly" },
+            { href: "/notifications", title: "Notifications", detail: "Catch up on what's new" },
           ].map((action) => (
-            <Link key={action.href} href={action.href} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-violet-200 hover:bg-violet-50/50">
+            <Link key={action.href} href={action.href} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-rose-200 hover:bg-rose-50/50">
               <p className="font-medium text-slate-900">{action.title}</p>
               <p className="mt-1 text-sm text-slate-500">{action.detail}</p>
             </Link>

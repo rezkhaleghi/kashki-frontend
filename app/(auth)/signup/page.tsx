@@ -37,7 +37,7 @@ export default function SignUpPage() {
     setSendingOtp(true);
     try {
       const response = await requestOtp({ email: form.getValues("email") });
-      setNotice(response.message);
+      setNotice(`${response.message}. Check your inbox and spam folder for the code.`);
     } catch (cause) {
       setError(
         cause instanceof ApiError

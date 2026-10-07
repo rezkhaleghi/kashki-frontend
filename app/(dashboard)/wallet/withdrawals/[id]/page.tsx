@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense, use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getWithdrawal } from "@/lib/api/withdrawals";
 import { ApiError } from "@/lib/api/client";
 import { ErrorState, LoadingState } from "@/components/shared/states";
 
-type PageProps = { params: { id: string } };
+type PageProps = { params: Promise<{ id: string }> };
 
 function errorText(error: Error | null) {
   return error instanceof ApiError ? error.message : error ? "Could not connect to Kashki." : "";
@@ -19,9 +20,18 @@ function dateLabel(value: string | null) {
 }
 
 export default function WithdrawalDetailPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<LoadingState label="Loading withdrawal…" />}>
+      <WithdrawalDetailContent params={params} />
+    </Suspense>
+  );
+}
+
+function WithdrawalDetailContent({ params }: PageProps) {
+  const { id } = use(params);
   const withdrawalQuery = useQuery({
-    queryKey: ["withdrawal", params.id],
-    queryFn: () => getWithdrawal(params.id),
+    queryKey: ["withdrawal", id],
+    queryFn: () => getWithdrawal(id),
   });
 
   return (

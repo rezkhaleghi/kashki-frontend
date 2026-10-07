@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
-import { changePassword } from "@/lib/api/auth";
+import { changePassword, logout } from "@/lib/api/auth";
 import { deleteAvatar, uploadAvatar } from "@/lib/api/files";
 import { getMe, updateMe } from "@/lib/api/users";
 import { ErrorState, LoadingState } from "@/components/shared/states";
@@ -39,6 +40,7 @@ function getError(error: Error | null) {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [notice, setNotice] = useState("");
   const [avatarError, setAvatarError] = useState("");
@@ -76,6 +78,14 @@ export default function ProfilePage() {
     onSuccess: () => {
       setNotice("Password changed. Other sessions have been signed out.");
       passwordForm.reset();
+    },
+  });
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: async () => {
+      await queryClient.clear();
+      router.replace("/login");
+      router.refresh();
     },
   });
   const avatarMutation = useMutation({
@@ -244,6 +254,24 @@ export default function ProfilePage() {
             {passwordMutation.isPending ? "Updating…" : "Update password"}
           </button>
         </form>
+      </section>
+
+      <section className="rounded-2xl border border-rose-100 bg-rose-50/50 p-6">
+        <h2 className="text-lg font-semibold text-slate-900">Your account</h2>
+        <p className="mt-1 text-sm text-slate-600">Sign out of Kashki on this device.</p>
+        {logoutMutation.isError && (
+          <p role="alert" className="mt-3 text-sm text-red-700">
+            {getError(logoutMutation.error) || "Could not log out. Please try again."}
+          </p>
+        )}
+        <button
+          type="button"
+          disabled={logoutMutation.isPending}
+          onClick={() => logoutMutation.mutate()}
+          className="mt-4 rounded-xl border border-rose-200 bg-white px-5 py-2.5 text-sm font-medium text-rose-800 disabled:opacity-50"
+        >
+          {logoutMutation.isPending ? "Logging out…" : "Log out"}
+        </button>
       </section>
     </div>
   );

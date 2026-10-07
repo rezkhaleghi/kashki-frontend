@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Gift } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(110,85,255,0.18),_transparent_45%),linear-gradient(to_bottom,_#fff,_#fafaf9)] text-slate-900">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_85%_20%,_rgba(251,113,159,0.14),_transparent_28%),radial-gradient(circle_at_15%_5%,_rgba(34,197,94,0.12),_transparent_32%),linear-gradient(to_bottom,_#fff,_#f7faf5)] text-slate-900">
       <div className="mx-auto flex max-w-6xl flex-col px-6 py-10 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between rounded-full border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -56,8 +57,13 @@ export default function HomePage() {
           </div>
 
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-            <div className="rounded-2xl bg-[#f8f7ff] p-6">
-              <p className="text-sm font-medium text-violet-700">Thoughtful giving, made simple</p>
+            <div className="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-emerald-50 p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
+                  <Gift aria-hidden="true" size={22} />
+                </span>
+                <p className="text-sm font-medium text-violet-700">Thoughtful giving, made simple</p>
+              </div>
               <h2 className="mt-3 text-2xl font-semibold text-slate-900">A better way to celebrate</h2>
               <div className="mt-6 space-y-4">
                 {[

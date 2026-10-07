@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, use, useMemo, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -17,7 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/shared/states
 import { WishProgress } from "@/components/shared/wish-progress";
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 const wishSchema = z.object({
@@ -107,6 +107,15 @@ function WishEditor({
 }
 
 export default function PublicListPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<LoadingState label="Loading list…" />}>
+      <PublicListContent params={params} />
+    </Suspense>
+  );
+}
+
+function PublicListContent({ params }: PageProps) {
+  const { id } = use(params);
   const queryClient = useQueryClient();
   const [editingWish, setEditingWish] = useState<string | null>(null);
   const [addingWish, setAddingWish] = useState(false);
@@ -120,12 +129,12 @@ export default function PublicListPage({ params }: PageProps) {
   const [wishPage, setWishPage] = useState(1);
 
   const listQuery = useQuery({
-    queryKey: ["list", params.id],
-    queryFn: () => getList(params.id),
+    queryKey: ["list", id],
+    queryFn: () => getList(id),
   });
   const wishesQuery = useQuery({
-    queryKey: ["wishes", params.id, wishPage],
-    queryFn: () => listWishes(params.id, { page: wishPage, limit: 20 }),
+    queryKey: ["wishes", id, wishPage],
+    queryFn: () => listWishes(id, { page: wishPage, limit: 20 }),
     enabled: listQuery.isSuccess,
   });
   const userQuery = useQuery({
@@ -162,8 +171,8 @@ export default function PublicListPage({ params }: PageProps) {
 
   const refreshWishes = async (wishId?: string) => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["wishes", params.id] }),
-      queryClient.invalidateQueries({ queryKey: ["list", params.id] }),
+      queryClient.invalidateQueries({ queryKey: ["wishes", id] }),
+      queryClient.invalidateQueries({ queryKey: ["list", id] }),
       queryClient.invalidateQueries({ queryKey: ["public-user"] }),
       wishId ? queryClient.invalidateQueries({ queryKey: ["wish-gift-progress", wishId] }) : Promise.resolve(),
     ]);
@@ -176,7 +185,7 @@ export default function PublicListPage({ params }: PageProps) {
     currency: values.targetAmount ? values.currency : null,
   });
   const createMutation = useMutation({
-    mutationFn: (values: WishFormValues) => createWish(params.id, toWishInput(values)),
+    mutationFn: (values: WishFormValues) => createWish(id, toWishInput(values)),
     onSuccess: async () => {
       setAddingWish(false);
       setNotice("Wish added.");
@@ -185,7 +194,7 @@ export default function PublicListPage({ params }: PageProps) {
   });
   const updateMutation = useMutation({
     mutationFn: ({ wishId, values }: { wishId: string; values: WishFormValues }) =>
-      updateWish(params.id, wishId, toWishInput(values)),
+      updateWish(id, wishId, toWishInput(values)),
     onSuccess: async (wish) => {
       setEditingWish(null);
       setNotice("Wish updated.");
@@ -193,7 +202,7 @@ export default function PublicListPage({ params }: PageProps) {
     },
   });
   const deleteMutation = useMutation({
-    mutationFn: (wishId: string) => deleteWish(params.id, wishId),
+    mutationFn: (wishId: string) => deleteWish(id, wishId),
     onSuccess: async (_, wishId) => {
       setNotice("Wish deleted.");
       await refreshWishes(wishId);

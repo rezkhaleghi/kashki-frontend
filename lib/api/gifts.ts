@@ -40,3 +40,13 @@ export async function listWishGifts(wishId: string, params?: { page?: number; li
   const query = search.toString();
   return apiClient<Paginated<Gift>>(`/wishes/${wishId}/gifts${query ? `?${query}` : ""}`);
 }
+
+export async function listAllWishGifts(wishId: string) {
+  const firstPage = await listWishGifts(wishId, { page: 1, limit: 100 });
+  const gifts = [...firstPage.data];
+  for (let page = 2; page <= firstPage.totalPages; page += 1) {
+    const result = await listWishGifts(wishId, { page, limit: 100 });
+    gifts.push(...result.data);
+  }
+  return gifts;
+}

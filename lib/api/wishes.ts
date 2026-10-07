@@ -20,6 +20,10 @@ export async function listWishes(listId: string, params?: { page?: number; limit
   return apiClient<Paginated<WishEntity>>(`/lists/${listId}/wishes${query ? `?${query}` : ""}`);
 }
 
+export async function getWish(listId: string, wishId: string) {
+  return apiClient<WishEntity>(`/lists/${listId}/wishes/${wishId}`);
+}
+
 export async function createWish(listId: string, input: CreateWishInput) {
   return apiClient<WishEntity>(`/lists/${listId}/wishes`, {
     method: "POST",

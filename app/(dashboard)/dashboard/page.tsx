@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
 import { logout } from "@/lib/api/auth";
+import { listReceivedGifts } from "@/lib/api/gifts";
 import { createList, listMyLists } from "@/lib/api/lists";
 import { listNotifications } from "@/lib/api/notifications";
 import { getMyBalances, getMe } from "@/lib/api/users";
@@ -31,6 +32,10 @@ export default function DashboardPage() {
     queryKey: ["notifications"],
     queryFn: () => listNotifications({ limit: 5 }),
   });
+  const giftsQuery = useQuery({
+    queryKey: ["gifts", "received", "recent"],
+    queryFn: () => listReceivedGifts({ limit: 5 }),
+  });
 
   const createListMutation = useMutation({
     mutationFn: createList,
@@ -55,16 +60,18 @@ export default function DashboardPage() {
   function handleCreateList(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setListError("");
-    createListMutation.mutate({ name: listName, visibility: "PUBLIC" });
+    createListMutation.mutate({ name: listName });
   }
 
   const listErrorMessage =
     errorText(userQuery.error) ||
     errorText(listsQuery.error) ||
     errorText(balancesQuery.error) ||
-    errorText(notificationsQuery.error);
+    errorText(notificationsQuery.error) ||
+    errorText(giftsQuery.error);
   const balances = balancesQuery.data?.data ?? [];
   const firstBalance = balances[0];
+  const firstBalanceAmount = firstBalance?.amount ?? firstBalance?._amount;
   const name = [userQuery.data?.firstName, userQuery.data?.lastName]
     .filter(Boolean)
     .join(" ");
@@ -78,6 +85,11 @@ export default function DashboardPage() {
             <h1 className="mt-1 text-3xl font-semibold text-slate-900">
               {name ? `Welcome, ${name}` : "Welcome back"}
             </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {userQuery.data?.dateOfBirth
+                ? `Your birthday · ${userQuery.data.dateOfBirth.slice(0, 10)}`
+                : "Add your birthday in profile settings"}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/wallet" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
@@ -136,7 +148,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Wallet balance</p>
             <p className="mt-3 text-3xl font-semibold text-slate-900">
-              {firstBalance ? `${firstBalance.amount} ${firstBalance.currency}` : balancesQuery.isPending ? "Loading…" : "—"}
+              {firstBalance ? `${firstBalanceAmount ?? "Unavailable"} ${firstBalance.currency}` : balancesQuery.isPending ? "Loading…" : "—"}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -153,7 +165,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { href: "/lists", title: "Manage wishes", detail: "Create and organize lists" },
+            { href: "/search", title: "Find someone", detail: "Discover public wishlists" },
+            { href: "/wallet", title: "Add funds", detail: "Top up your Kashki wallet" },
+            { href: "/gifts", title: "Send a gift", detail: "Give toward a wish or directly" },
+          ].map((action) => (
+            <Link key={action.href} href={action.href} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-violet-200 hover:bg-violet-50/50">
+              <p className="font-medium text-slate-900">{action.title}</p>
+              <p className="mt-1 text-sm text-slate-500">{action.detail}</p>
+            </Link>
+          ))}
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-slate-900">Your lists</h2>
@@ -167,7 +193,9 @@ export default function DashboardPage() {
               {listsQuery.data?.data.map((list) => (
                 <div key={list.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
                   <div>
-                    <p className="font-medium text-slate-900">{list.name}</p>
+                    <p className="font-medium text-slate-900">
+                      {list.name === "Birthday" ? "Birthday list" : list.name}
+                    </p>
                     <p className="text-sm text-slate-500">{list.visibility}</p>
                   </div>
                   <Link href={`/lists/${list.id}`} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-700">
@@ -181,13 +209,33 @@ export default function DashboardPage() {
             </div>
           </section>
 
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Recent gifts</h2>
+            <ul className="mt-4 space-y-4 text-sm text-slate-600">
+              {giftsQuery.data?.data.map((gift) => (
+                <li key={gift.id} className="rounded-xl bg-slate-50 p-3">
+                  <p className="font-medium text-slate-800">
+                    {gift.userId === null ? "Anonymous gift" : "Gift received"}
+                  </p>
+                  <p className="mt-1">{gift.amount} {gift.currency}</p>
+                  {gift.message && <p className="mt-1">{gift.message}</p>}
+                </li>
+              ))}
+              {giftsQuery.data?.data.length === 0 && (
+                <li className="rounded-xl bg-slate-50 p-3">No gifts received yet.</li>
+              )}
+            </ul>
+          </section>
+
           <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Recent activity</h2>
             <ul className="mt-4 space-y-4 text-sm text-slate-600">
               {notificationsQuery.data?.data.map((notification) => (
                 <li key={notification.id} className="rounded-xl bg-slate-50 p-3">
-                  <p className="font-medium text-slate-800">{notification.title}</p>
-                  <p className="mt-1">{notification.message}</p>
+                  <Link href="/notifications" className="block">
+                    <p className="font-medium text-slate-800">{notification.title}</p>
+                    <p className="mt-1">{notification.message}</p>
+                  </Link>
                 </li>
               ))}
               {notificationsQuery.data?.data.length === 0 && (

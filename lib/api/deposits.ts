@@ -22,10 +22,13 @@ export async function getDeposit(id: string) {
   return apiClient<Deposit>(`/deposits/${id}`);
 }
 
-export async function createDeposit(input: CreateDepositInput) {
+export async function createDeposit(
+  input: CreateDepositInput,
+  idempotencyKey = crypto.randomUUID(),
+) {
   return apiClient<Deposit>("/deposits", {
     method: "POST",
-    headers: { "Idempotency-Key": crypto.randomUUID() },
+    headers: { "Idempotency-Key": idempotencyKey },
     body: JSON.stringify(input),
   });
 }

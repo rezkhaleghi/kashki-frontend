@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
-import { createDeposit, listDeposits, verifyDeposit } from "@/lib/api/deposits";
+import { createDeposit, listDeposits } from "@/lib/api/deposits";
 import { createWithdrawal, listWithdrawals } from "@/lib/api/withdrawals";
 import { getMyBalances } from "@/lib/api/users";
 
@@ -26,10 +26,22 @@ export default function WalletPage() {
   const [withdrawCurrency, setWithdrawCurrency] = useState("USD");
   const [destination, setDestination] = useState("");
   const [message, setMessage] = useState("");
+  const [depositPage, setDepositPage] = useState(1);
+  const [withdrawalPage, setWithdrawalPage] = useState(1);
+  const [depositOperation, setDepositOperation] = useState<{
+    input: { provider: string; currency: string; amount: string };
+    idempotencyKey: string;
+  } | null>(null);
 
   const balancesQuery = useQuery({ queryKey: ["my-balances"], queryFn: () => getMyBalances() });
-  const depositsQuery = useQuery({ queryKey: ["deposits"], queryFn: () => listDeposits() });
-  const withdrawalsQuery = useQuery({ queryKey: ["withdrawals"], queryFn: () => listWithdrawals() });
+  const depositsQuery = useQuery({
+    queryKey: ["deposits", depositPage],
+    queryFn: () => listDeposits({ page: depositPage, limit: 20 }),
+  });
+  const withdrawalsQuery = useQuery({
+    queryKey: ["withdrawals", withdrawalPage],
+    queryFn: () => listWithdrawals({ page: withdrawalPage, limit: 20 }),
+  });
 
   const refreshWallet = async () => {
     await Promise.all([
@@ -40,18 +52,12 @@ export default function WalletPage() {
   };
 
   const depositMutation = useMutation({
-    mutationFn: createDeposit,
+    mutationFn: ({ input, idempotencyKey }: NonNullable<typeof depositOperation>) =>
+      createDeposit(input, idempotencyKey),
     onSuccess: async () => {
+      setDepositOperation(null);
       setDepositAmount("");
       setMessage("Deposit started. When payment is complete, verify it from the deposit list.");
-      await refreshWallet();
-    },
-  });
-
-  const verifyMutation = useMutation({
-    mutationFn: verifyDeposit,
-    onSuccess: async () => {
-      setMessage("Deposit verified.");
       await refreshWallet();
     },
   });
@@ -69,11 +75,16 @@ export default function WalletPage() {
   function handleDeposit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-    depositMutation.mutate({
-      provider: "FAKE_PROVIDER",
-      currency: depositCurrency,
-      amount: depositAmount,
-    });
+    const operation = depositOperation ?? {
+      input: {
+        provider: "FAKE_PROVIDER",
+        currency: depositCurrency,
+        amount: depositAmount,
+      },
+      idempotencyKey: crypto.randomUUID(),
+    };
+    setDepositOperation(operation);
+    depositMutation.mutate(operation);
   }
 
   function handleWithdrawal(event: FormEvent<HTMLFormElement>) {
@@ -88,7 +99,6 @@ export default function WalletPage() {
 
   const mutationError =
     errorText(depositMutation.error) ||
-    errorText(verifyMutation.error) ||
     errorText(withdrawalMutation.error);
   const queryError =
     errorText(balancesQuery.error) ||
@@ -121,7 +131,7 @@ export default function WalletPage() {
           {balancesQuery.data?.data.map((balance) => (
             <div key={balance.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-sm text-slate-500">{balance.currency} balance</p>
-              <p className="mt-3 text-3xl font-semibold text-violet-600">{balance.amount}</p>
+              <p className="mt-3 text-3xl font-semibold text-violet-600">{balance.amount ?? balance._amount ?? "Unavailable"}</p>
             </div>
           ))}
           {balancesQuery.isPending && <p className="text-sm text-slate-500">Loading balances…</p>}
@@ -130,6 +140,7 @@ export default function WalletPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Deposit</h2>
+            <p className="mt-1 text-sm text-slate-500">Development deposits use the backend sandbox provider.</p>
             <form className="mt-4 space-y-4" onSubmit={handleDeposit}>
               <label className="block text-sm font-medium text-slate-700">
                 Amount
@@ -137,8 +148,9 @@ export default function WalletPage() {
                   className={`${inputClass} mt-2`}
                   type="number"
                   min="0.01"
-                  step="0.01"
+                  step="any"
                   required
+                  disabled={depositOperation !== null}
                   value={depositAmount}
                   onChange={(event) => setDepositAmount(event.target.value)}
                   placeholder="100.00"
@@ -146,11 +158,12 @@ export default function WalletPage() {
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Currency
-                <select className={`${inputClass} mt-2`} value={depositCurrency} onChange={(event) => setDepositCurrency(event.target.value)}>
+                <select disabled={depositOperation !== null} className={`${inputClass} mt-2`} value={depositCurrency} onChange={(event) => setDepositCurrency(event.target.value)}>
                   <option value="USD">USD</option>
                   <option value="IRR">IRR</option>
                 </select>
               </label>
+              <p className="text-xs text-slate-500">Provider: FAKE_PROVIDER (sandbox)</p>
               <button
                 type="submit"
                 disabled={depositMutation.isPending}
@@ -158,6 +171,16 @@ export default function WalletPage() {
               >
                 {depositMutation.isPending ? "Starting deposit…" : "Start deposit"}
               </button>
+              {depositMutation.isError && depositOperation && (
+                <button
+                  type="button"
+                  disabled={depositMutation.isPending}
+                  onClick={() => depositMutation.mutate(depositOperation)}
+                  className="w-full rounded-xl border border-amber-300 px-4 py-2.5 text-sm font-medium text-amber-800 disabled:opacity-50"
+                >
+                  Retry this deposit safely
+                </button>
+              )}
             </form>
           </section>
 
@@ -170,7 +193,7 @@ export default function WalletPage() {
                   className={`${inputClass} mt-2`}
                   type="number"
                   min="0.01"
-                  step="0.01"
+                  step="any"
                   required
                   value={withdrawAmount}
                   onChange={(event) => setWithdrawAmount(event.target.value)}
@@ -215,21 +238,21 @@ export default function WalletPage() {
             <ul className="mt-4 space-y-3">
               {depositsQuery.data?.data.map((deposit) => (
                 <li key={deposit.id} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm">
-                  <span>{deposit.amount} {deposit.currency} · {deposit.status}</span>
-                  {deposit.status === "PENDING" && (
-                    <button
-                      type="button"
-                      disabled={verifyMutation.isPending}
-                      onClick={() => verifyMutation.mutate(deposit.id)}
-                      className="font-medium text-violet-700 disabled:opacity-50"
-                    >
-                      Verify
-                    </button>
-                  )}
+                  <Link href={`/wallet/deposits/${deposit.id}`} className="min-w-0 flex-1 font-medium text-slate-800">
+                    {deposit.amount} {deposit.currency} · {deposit.status}
+                  </Link>
+                  {deposit.status === "PENDING" && <span className="text-xs text-slate-500">Verification available</span>}
                 </li>
               ))}
               {depositsQuery.data?.data.length === 0 && <li className="text-sm text-slate-500">No deposits yet.</li>}
             </ul>
+            {depositsQuery.data && depositsQuery.data.totalPages > 1 && (
+              <nav aria-label="Deposit pages" className="mt-4 flex items-center justify-between">
+                <button type="button" disabled={depositPage <= 1 || depositsQuery.isFetching} onClick={() => setDepositPage((current) => current - 1)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40">Previous</button>
+                <span className="text-xs text-slate-500">{depositPage} / {depositsQuery.data.totalPages}</span>
+                <button type="button" disabled={depositPage >= depositsQuery.data.totalPages || depositsQuery.isFetching} onClick={() => setDepositPage((current) => current + 1)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40">Next</button>
+              </nav>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -237,11 +260,20 @@ export default function WalletPage() {
             <ul className="mt-4 space-y-3">
               {withdrawalsQuery.data?.data.map((withdrawal) => (
                 <li key={withdrawal.id} className="rounded-xl bg-slate-50 p-3 text-sm">
+                  <Link href={`/wallet/withdrawals/${withdrawal.id}`} className="block">
                   {withdrawal.amount} {withdrawal.currency} · {withdrawal.status}
+                  </Link>
                 </li>
               ))}
               {withdrawalsQuery.data?.data.length === 0 && <li className="text-sm text-slate-500">No withdrawals yet.</li>}
             </ul>
+            {withdrawalsQuery.data && withdrawalsQuery.data.totalPages > 1 && (
+              <nav aria-label="Withdrawal pages" className="mt-4 flex items-center justify-between">
+                <button type="button" disabled={withdrawalPage <= 1 || withdrawalsQuery.isFetching} onClick={() => setWithdrawalPage((current) => current - 1)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40">Previous</button>
+                <span className="text-xs text-slate-500">{withdrawalPage} / {withdrawalsQuery.data.totalPages}</span>
+                <button type="button" disabled={withdrawalPage >= withdrawalsQuery.data.totalPages || withdrawalsQuery.isFetching} onClick={() => setWithdrawalPage((current) => current + 1)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40">Next</button>
+              </nav>
+            )}
           </div>
         </section>
       </div>

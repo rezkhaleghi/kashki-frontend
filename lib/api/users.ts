@@ -1,5 +1,11 @@
 import { apiClient } from "@/lib/api/client";
-import type { Paginated, PublicUserProfile, User, UserBalance } from "@/lib/types";
+import type {
+  Paginated,
+  PublicUserProfile,
+  User,
+  UserBalance,
+  UserSearchResult,
+} from "@/lib/types";
 
 export async function getMe() {
   return apiClient<User>("/users/me");
@@ -30,7 +36,7 @@ export async function getMyBalances(params?: { page?: number; limit?: number }) 
 
 export async function searchUsers(query: string, page = 1, limit = 20) {
   const params = new URLSearchParams({ q: query, page: String(page), limit: String(limit) });
-  return apiClient<Paginated<{ id: string; email: string; userName: string | null; firstName: string | null; lastName: string | null; avatar: string | null }>>(`/users/search?${params.toString()}`);
+  return apiClient<Paginated<UserSearchResult>>(`/users/search?${params.toString()}`);
 }
 
 export async function getPublicUserProfile(username: string) {

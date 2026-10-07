@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
 import { getPublicUserProfile } from "@/lib/api/users";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { WishProgress } from "@/components/shared/wish-progress";
 
 type PageProps = {
   params: { username: string };
@@ -31,6 +33,9 @@ export default function PublicUserPage({ params }: PageProps) {
         ) : profile ? (
           <>
             <p className="text-sm text-slate-500">Public profile</p>
+            <div className="mt-4">
+              <UserAvatar src={profile.avatar} name={fullName || profile.userName || params.username} size="lg" />
+            </div>
             <h1 className="mt-3 text-4xl font-semibold text-slate-900">
               {fullName || `@${profile.userName ?? params.username}`}
             </h1>
@@ -63,9 +68,7 @@ export default function PublicUserPage({ params }: PageProps) {
                             {wish.description && <p className="mt-1 text-sm text-slate-600">{wish.description}</p>}
                           </div>
                           {wish.targetAmount && wish.currency && (
-                            <p className="text-sm font-medium text-slate-700">
-                              {wish.receivedAmount ?? "0"} / {wish.targetAmount} {wish.currency}
-                            </p>
+                            <WishProgress received={wish.receivedAmount} target={wish.targetAmount} currency={wish.currency} />
                           )}
                         </div>
                       </li>

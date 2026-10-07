@@ -2,6 +2,9 @@ export type ApiMessage = {
   message: string;
 };
 
+export type PaymentCurrency = "IRR" | "USD" | "EUR" | "USDT" | "BTC" | "TRX";
+export type PaymentProvider = "FAKE_PROVIDER" | "ZARINPAL";
+
 export type Paginated<T> = {
   data: T[];
   page: number;
@@ -26,11 +29,20 @@ export type User = {
 export type UserBalance = {
   id: string;
   userId: string;
-  amount: string;
+  amount?: string;
+  _amount?: string;
   currency: string;
-  available: string;
+};
+
+export type UserSearchResult = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  userName: string | null;
+  avatar: string | null;
+  bio: string | null;
+  email: string;
   createdAt: string;
-  updatedAt: string;
 };
 
 export type ListVisibility = "PUBLIC" | "UNLISTED" | "PRIVATE";
@@ -115,8 +127,13 @@ export type Deposit = {
   provider: string;
   currency: string;
   amount: string;
-  status: string;
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  referenceId: string;
+  providerPaymentId: string | null;
+  transactionId: string | null;
+  completedAt: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 export type Withdrawal = {
@@ -125,16 +142,21 @@ export type Withdrawal = {
   currency: string;
   amount: string;
   destination: string;
-  status: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED";
+  referenceId: string;
+  transactionId: string | null;
+  completedAt: string | null;
+  rejectionReason: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 export type Notification = {
   id: string;
   userId: string;
-  type: string;
-  channel: string;
-  status: string;
+  type: "WITHDRAWAL_APPROVED" | "WITHDRAWAL_REJECTED" | "GIFT_RECEIVED";
+  channel: "IN_APP" | "EMAIL" | "SMS" | "TELEGRAM";
+  status: "PENDING" | "SENT" | "FAILED";
   title: string;
   message: string;
   referenceId: string | null;

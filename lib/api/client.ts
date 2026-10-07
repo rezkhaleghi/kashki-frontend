@@ -9,8 +9,10 @@ export class ApiError extends Error {
       typeof data === "object" &&
         data !== null &&
         "message" in data &&
-        typeof data.message === "string"
-        ? data.message
+        (typeof data.message === "string" || Array.isArray(data.message))
+        ? Array.isArray(data.message)
+          ? data.message.filter((item): item is string => typeof item === "string").join(", ")
+          : data.message
         : `Request failed with status ${status}`,
     );
 
@@ -53,6 +55,9 @@ export async function apiClient<T>(
     : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("kashki:unauthorized"));
+    }
     throw new ApiError(response.status, data);
   }
 

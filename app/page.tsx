@@ -16,14 +16,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <nav className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
-            <Link href="/login" className="transition hover:text-slate-900">
+          <nav className="flex items-center gap-2 text-sm text-slate-600 md:gap-6">
+            <Link href="/login" className="rounded-full px-3 py-2 transition hover:text-slate-900">
               Login
             </Link>
-            <Link href="/signup" className="transition hover:text-slate-900">
+            <Link href="/signup" className="rounded-full bg-violet-600 px-3 py-2 font-medium text-white transition hover:bg-violet-500 md:bg-transparent md:px-0 md:font-normal md:text-slate-600">
               Sign up
             </Link>
-            <Link href="/dashboard" className="rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700">
+            <Link href="/dashboard" className="hidden rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 md:block">
               Dashboard
             </Link>
           </nav>
@@ -53,41 +53,23 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-8 text-sm text-slate-500">
-              <div>
-                <p className="text-2xl font-semibold text-slate-900">1,200+</p>
-                <p>birthday lists</p>
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-slate-900">$84k</p>
-                <p>gifted this year</p>
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-slate-900">94%</p>
-                <p>wish fulfillment</p>
-              </div>
-            </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/70">
-            <div className="rounded-2xl border border-violet-100 bg-violet-50 p-5">
-              <p className="text-sm font-medium text-violet-700">Featured birthday list</p>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-900">Maya&apos;s dream wishlist</h2>
-              <div className="mt-5 space-y-4">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
+            <div className="rounded-2xl bg-[#f8f7ff] p-6">
+              <p className="text-sm font-medium text-violet-700">Thoughtful giving, made simple</p>
+              <h2 className="mt-3 text-2xl font-semibold text-slate-900">A better way to celebrate</h2>
+              <div className="mt-6 space-y-4">
                 {[
-                  { title: "Camera kit", amount: "$850", funded: "$420" },
-                  { title: "Weekend getaway", amount: "$1,200", funded: "$210" },
-                  { title: "Bookshelf", amount: "$160", funded: "$90" },
-                ].map((item) => (
-                  <div key={item.title} className="rounded-xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-slate-900">{item.title}</p>
-                        <p className="text-sm text-slate-600">Goal {item.amount}</p>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                        {item.funded} funded
-                      </span>
+                  { number: "01", title: "Make a birthday list", text: "Collect wishes and choose who can see each list." },
+                  { number: "02", title: "Give together", text: "Contribute toward a wish or send a cash gift." },
+                  { number: "03", title: "Keep track", text: "Follow gifts and wallet activity in one place." },
+                ].map((step) => (
+                  <div key={step.number} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <span className="font-semibold text-violet-600">{step.number}</span>
+                    <div>
+                      <p className="font-medium text-slate-900">{step.title}</p>
+                      <p className="mt-1 text-sm text-slate-600">{step.text}</p>
                     </div>
                   </div>
                 ))}

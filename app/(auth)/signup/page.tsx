@@ -2,16 +2,30 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
 import { ApiError } from "@/lib/api/client";
 import { requestOtp, signUp } from "@/lib/api/auth";
 
+const signUpSchema = z.object({
+  userName: z.string().min(3).max(50),
+  email: z.string().email("Enter a valid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+  otp: z.string().length(6, "Enter the 6-digit code."),
+});
+type SignUpFormValues = z.infer<typeof signUpSchema>;
+
 export default function SignUpPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
+  const queryClient = useQueryClient();
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { userName: "", email: "", password: "", otp: "" },
+  });
+  const email = useWatch({ control: form.control, name: "email" });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
@@ -22,7 +36,7 @@ export default function SignUpPage() {
     setNotice("");
     setSendingOtp(true);
     try {
-      const response = await requestOtp({ email });
+      const response = await requestOtp({ email: form.getValues("email") });
       setNotice(response.message);
     } catch (cause) {
       setError(
@@ -35,13 +49,13 @@ export default function SignUpPage() {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(values: SignUpFormValues) {
     setError("");
     setSubmitting(true);
 
     try {
-      await signUp({ userName, email, password, otp });
+      await signUp(values);
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/dashboard");
       router.refresh();
     } catch (cause) {
@@ -62,7 +76,7 @@ export default function SignUpPage() {
         <h1 className="mt-3 text-3xl font-semibold text-slate-900">Create account</h1>
         <p className="mt-2 text-sm text-slate-600">Start your birthday list in minutes.</p>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
           <div>
             <label htmlFor="username" className="mb-2 block text-sm font-medium text-slate-700">
               Username
@@ -74,8 +88,7 @@ export default function SignUpPage() {
               minLength={3}
               maxLength={50}
               required
-              value={userName}
-              onChange={(event) => setUserName(event.target.value)}
+              {...form.register("userName")}
               className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               placeholder="yourname"
             />
@@ -90,8 +103,7 @@ export default function SignUpPage() {
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              {...form.register("email")}
               className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               placeholder="you@example.com"
             />
@@ -116,8 +128,7 @@ export default function SignUpPage() {
               autoComplete="new-password"
               minLength={8}
               required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              {...form.register("password")}
               className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               placeholder="At least 8 characters"
             />
@@ -135,8 +146,7 @@ export default function SignUpPage() {
               minLength={6}
               maxLength={6}
               required
-              value={otp}
-              onChange={(event) => setOtp(event.target.value)}
+              {...form.register("otp")}
               className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               placeholder="6-digit code"
             />

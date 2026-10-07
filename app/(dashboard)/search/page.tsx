@@ -4,12 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { searchUsers } from "@/lib/api/users";
-import { ApiError } from "@/lib/api/client";
-import {
-  EmptyState,
-  ErrorState,
-  LoadingState,
-} from "@/components/shared/states";
+import { EmptyState, LoadingState } from "@/components/shared/states";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { CakeSlice } from "lucide-react";
 
@@ -40,11 +35,6 @@ export default function SearchPage() {
     enabled: query.length >= 2,
     placeholderData: keepPreviousData,
   });
-  const errorMessage =
-    usersQuery.error instanceof ApiError
-      ? usersQuery.error.message
-      : "Search is unavailable right now. Please try again.";
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header>
@@ -75,9 +65,7 @@ export default function SearchPage() {
         />
       ) : usersQuery.isPending ? (
         <LoadingState label="Searching people…" />
-      ) : usersQuery.isError ? (
-        <ErrorState message={errorMessage} />
-      ) : usersQuery.data.data.length === 0 ? (
+      ) : usersQuery.isError ? null : usersQuery.data.data.length === 0 ? (
         <EmptyState
           title="No people found"
           description="Try another name, username, or exact email."

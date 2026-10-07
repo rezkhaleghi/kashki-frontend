@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CakeSlice } from "lucide-react";
-import { ApiError } from "@/lib/api/client";
 import { changePassword, logout } from "@/lib/api/auth";
 import { deleteAvatar, uploadAvatar } from "@/lib/api/files";
 import { getMe, updateMe } from "@/lib/api/users";
@@ -32,13 +31,6 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 const inputClass =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100";
-
-function getError(error: Error | null) {
-  if (!error) return "";
-  return error instanceof ApiError
-    ? error.message
-    : "Could not connect to Kashki. Please try again.";
-}
 
 function formatFullBirthday(value: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -116,8 +108,7 @@ export default function ProfilePage() {
 
   if (userQuery.isPending)
     return <LoadingState label="Loading your profile…" />;
-  if (userQuery.isError || !userQuery.data)
-    return <ErrorState message={getError(userQuery.error)} />;
+  if (userQuery.isError || !userQuery.data) return null;
 
   const user = userQuery.data;
   const displayName =

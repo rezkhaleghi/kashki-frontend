@@ -20,7 +20,6 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ApiError } from "@/lib/api/client";
 import { createGift, listAllWishGifts } from "@/lib/api/gifts";
 import { getList } from "@/lib/api/lists";
 import {
@@ -32,11 +31,7 @@ import {
 import { getMe } from "@/lib/api/users";
 import type { WishEntity } from "@/lib/types";
 import { formatDecimalAmount, sumDecimalStrings } from "@/lib/utils/decimal";
-import {
-  EmptyState,
-  ErrorState,
-  LoadingState,
-} from "@/components/shared/states";
+import { EmptyState, LoadingState } from "@/components/shared/states";
 import { WishProgress } from "@/components/shared/wish-progress";
 
 type PageProps = {
@@ -77,14 +72,6 @@ type WishFormValues = z.infer<typeof wishSchema>;
 
 const inputClass =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm";
-
-function errorText(error: Error | null) {
-  return error instanceof ApiError
-    ? error.message
-    : error
-      ? "Could not connect to Kashki."
-      : "";
-}
 
 function WishEditor({
   initial,
@@ -297,8 +284,6 @@ function PublicListContent({ params }: PageProps) {
   const isOwner = Boolean(
     listQuery.data && userQuery.data?.id === listQuery.data.userId,
   );
-  const wishMutationError = errorText(wishesQuery.error);
-
   const refreshWishes = async (wishId?: string) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["wishes", id] }),
@@ -397,13 +382,6 @@ function PublicListContent({ params }: PageProps) {
     });
   }
 
-  const error = listQuery.error;
-  const errorMessage =
-    error instanceof ApiError
-      ? error.message
-      : error
-        ? "Could not connect to Kashki. Check that the backend is running."
-        : "";
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -412,11 +390,7 @@ function PublicListContent({ params }: PageProps) {
         </Link>
         {listQuery.isPending ? (
           <p className="mt-5 text-slate-500">Loading list…</p>
-        ) : listQuery.isError ? (
-          <p role="alert" className="mt-5 text-sm text-red-700">
-            {errorMessage}
-          </p>
-        ) : listQuery.data ? (
+        ) : listQuery.isError ? null : listQuery.data ? (
           <>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -446,10 +420,6 @@ function PublicListContent({ params }: PageProps) {
         ) : null}
       </header>
 
-      {wishMutationError && listQuery.data && (
-        <ErrorState message={wishMutationError} />
-      )}
-
       {addingWish && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
@@ -465,11 +435,7 @@ function PublicListContent({ params }: PageProps) {
 
       {wishesQuery.isPending ? (
         <LoadingState label="Loading wishes…" />
-      ) : wishesQuery.isError ? (
-        <ErrorState
-          message={errorText(wishesQuery.error) || "Could not load wishes."}
-        />
-      ) : wishesQuery.data.data.length === 0 ? (
+      ) : wishesQuery.isError ? null : wishesQuery.data.data.length === 0 ? (
         <EmptyState
           title="No wishes yet"
           description={
@@ -495,10 +461,10 @@ function PublicListContent({ params }: PageProps) {
             const wishStatus = wish.status;
             const completed = wishStatus === "COMPLETED";
             const received = receivedByWish.get(wish.id) ?? "0";
-            const giftProgressError =
+            const giftProgressQuery =
               progressQueries[
                 targetedWishes.findIndex((item) => item.id === wish.id)
-              ]?.error;
+              ];
             const isEditing = editingWish === wish.id;
 
             return (
@@ -554,22 +520,11 @@ function PublicListContent({ params }: PageProps) {
                         )}
                         {wish.targetAmount &&
                           wish.currency &&
-                          (progressQueries[
-                            targetedWishes.findIndex(
-                              (item) => item.id === wish.id,
-                            )
-                          ]?.isPending ? (
+                          (giftProgressQuery?.isPending ? (
                             <p className="mt-3 text-sm text-slate-500">
                               Loading funding progress…
                             </p>
-                          ) : giftProgressError ? (
-                            <p
-                              role="alert"
-                              className="mt-3 text-sm text-red-600"
-                            >
-                              {errorText(giftProgressError ?? null)}
-                            </p>
-                          ) : (
+                          ) : giftProgressQuery?.isError ? null : (
                             <WishProgress
                               received={received}
                               target={wish.targetAmount}

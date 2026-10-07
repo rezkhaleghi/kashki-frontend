@@ -11,7 +11,6 @@ import {
   Heart,
   WalletCards,
 } from "lucide-react";
-import { ApiError } from "@/lib/api/client";
 import { listGivenGifts, listReceivedGifts } from "@/lib/api/gifts";
 import { createList, listMyLists } from "@/lib/api/lists";
 import { listNotifications } from "@/lib/api/notifications";
@@ -19,18 +18,10 @@ import { getMyBalances, getMe } from "@/lib/api/users";
 import { formatDecimalAmount } from "@/lib/utils/decimal";
 import { UserAvatar } from "@/components/shared/user-avatar";
 
-function errorText(error: Error | null) {
-  if (!error) return "";
-  return error instanceof ApiError
-    ? error.message
-    : "Could not connect to Kashki. Check that the backend is running.";
-}
-
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [showNewList, setShowNewList] = useState(false);
   const [listName, setListName] = useState("");
-  const [listError, setListError] = useState("");
   const [giftTab, setGiftTab] = useState<"received" | "given">("received");
 
   const userQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
@@ -60,24 +51,15 @@ export default function DashboardPage() {
     onSuccess: async () => {
       setListName("");
       setShowNewList(false);
-      setListError("");
       await queryClient.invalidateQueries({ queryKey: ["my-lists"] });
     },
-    onError: (error: Error) => setListError(errorText(error)),
   });
 
   function handleCreateList(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setListError("");
     createListMutation.mutate({ name: listName });
   }
 
-  const listErrorMessage =
-    errorText(userQuery.error) ||
-    errorText(listsQuery.error) ||
-    errorText(balancesQuery.error) ||
-    errorText(unreadNotificationsQuery.error) ||
-    errorText(giftsQuery.error);
   const balances = balancesQuery.data?.data ?? [];
   const firstBalance = balances[0];
   const firstBalanceAmount = firstBalance?.amount ?? firstBalance?._amount;
@@ -139,20 +121,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </header>
-
-        {listErrorMessage && (
-          <p
-            role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-          >
-            {listErrorMessage}{" "}
-            {userQuery.error && (
-              <Link href="/login" className="font-semibold underline">
-                Log in
-              </Link>
-            )}
-          </p>
-        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           <section className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
@@ -249,11 +217,6 @@ export default function DashboardPage() {
                 >
                   {createListMutation.isPending ? "Creating…" : "Create list"}
                 </button>
-                {listError && (
-                  <p role="alert" className="w-full text-sm text-red-600">
-                    {listError}
-                  </p>
-                )}
               </form>
             )}
             <div className="mt-5 space-y-4">

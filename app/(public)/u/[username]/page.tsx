@@ -48,11 +48,6 @@ function PublicUserContent({ params }: PageProps) {
   const fullName = [profile?.firstName, profile?.lastName]
     .filter(Boolean)
     .join(" ");
-  const error =
-    profileQuery.error instanceof ApiError
-      ? profileQuery.error.message
-      : "Could not connect to Kashki. Check that the backend is running.";
-
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_5%_8%,_rgba(255,221,231,0.78),_transparent_30%),radial-gradient(ellipse_at_95%_38%,_rgba(190,240,226,0.65),_transparent_32%),linear-gradient(160deg,_#fffaf9_0%,_#f8fffc_100%)] px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-5xl">
@@ -76,13 +71,6 @@ function PublicUserContent({ params }: PageProps) {
         {profileQuery.isPending ? (
           <p className="border-y border-emerald-900/10 bg-white/70 px-5 py-8 text-slate-500">
             Loading profile…
-          </p>
-        ) : profileQuery.isError ? (
-          <p
-            role="alert"
-            className="border-y border-rose-200 bg-white/70 px-5 py-8 text-red-700"
-          >
-            {error}
           </p>
         ) : profile ? (
           <>

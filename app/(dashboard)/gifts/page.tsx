@@ -12,12 +12,7 @@ import {
 } from "@tanstack/react-query";
 import { createGift, listGivenGifts, listReceivedGifts } from "@/lib/api/gifts";
 import { searchUsers } from "@/lib/api/users";
-import { ApiError } from "@/lib/api/client";
-import {
-  EmptyState,
-  ErrorState,
-  LoadingState,
-} from "@/components/shared/states";
+import { EmptyState, LoadingState } from "@/components/shared/states";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { formatDecimalAmount } from "@/lib/utils/decimal";
 import { CakeSlice } from "lucide-react";
@@ -36,14 +31,6 @@ const giftSchema = z.object({
 });
 type GiftFormValues = z.infer<typeof giftSchema>;
 type GiftTab = "given" | "received";
-
-function errorText(error: Error | null) {
-  return error instanceof ApiError
-    ? error.message
-    : error
-      ? "Could not connect to Kashki."
-      : "";
-}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
@@ -208,11 +195,6 @@ export default function GiftsPage() {
                 {peopleQuery.isFetching && (
                   <p className="mt-2 text-xs text-slate-500">Searching…</p>
                 )}
-                {peopleQuery.error && (
-                  <p role="alert" className="mt-2 text-sm text-red-600">
-                    {errorText(peopleQuery.error)}
-                  </p>
-                )}
                 {peopleQuery.data && (
                   <ul className="mt-2 max-h-52 space-y-1 overflow-auto rounded-xl border border-slate-200 p-2">
                     {peopleQuery.data.data.map((person) => {
@@ -375,15 +357,7 @@ export default function GiftsPage() {
           <div className="pt-4">
             <LoadingState label="Loading gift history…" />
           </div>
-        ) : selectedQuery.isError ? (
-          <div className="pt-4">
-            <ErrorState
-              message={
-                errorText(selectedQuery.error) || "Could not load gift history."
-              }
-            />
-          </div>
-        ) : selectedGifts.length === 0 ? (
+        ) : selectedQuery.isError ? null : selectedGifts.length === 0 ? (
           <div className="pt-4">
             <EmptyState
               title={`No gifts ${tab} yet`}

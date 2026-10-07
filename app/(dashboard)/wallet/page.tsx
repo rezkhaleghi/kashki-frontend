@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "@/lib/api/client";
 import { createDeposit, listDeposits } from "@/lib/api/deposits";
 import { createWithdrawal, listWithdrawals } from "@/lib/api/withdrawals";
 import { getMyBalances } from "@/lib/api/users";
@@ -11,13 +10,6 @@ import { formatDecimalAmount } from "@/lib/utils/decimal";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm";
-
-function errorText(error: Error | null) {
-  if (!error) return "";
-  return error instanceof ApiError
-    ? error.message
-    : "Could not connect to Kashki. Check that the backend is running.";
-}
 
 export default function WalletPage() {
   const queryClient = useQueryClient();
@@ -99,11 +91,6 @@ export default function WalletPage() {
     });
   }
 
-  const queryError =
-    errorText(balancesQuery.error) ||
-    errorText(depositsQuery.error) ||
-    errorText(withdrawalsQuery.error);
-
   return (
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -122,19 +109,6 @@ export default function WalletPage() {
           </Link>
         </header>
 
-        {queryError && (
-          <p
-            role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-          >
-            {queryError}{" "}
-            {balancesQuery.error && (
-              <Link href="/login" className="font-semibold underline">
-                Log in
-              </Link>
-            )}
-          </p>
-        )}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {balancesQuery.data?.data.map((balance) => {
             const amount = balance.amount ?? balance._amount;

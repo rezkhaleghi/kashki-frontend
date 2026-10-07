@@ -2,25 +2,30 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Gift, Heart, Sparkles } from "lucide-react";
+import { ArrowUpRight, CakeSlice, Gift, Heart, Sparkles } from "lucide-react";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { getMe } from "@/lib/api/users";
 
 const faqs = [
   {
-    question: "How do birthday wishlists work?",
+    question: "What is Kashki?",
     answer:
-      "Add the things you love to a list, then share your profile so friends can choose a wish or contribute together.",
+      "Kashki is a birthday wishlist and gifting space. It helps you share the things you love and makes it easier for friends and family to celebrate you thoughtfully.",
   },
   {
-    question: "Can I keep a gift anonymous?",
+    question: "How does Kashki work?",
     answer:
-      "Yes. When sending a general gift, choose the anonymous option and your name will not be shown to the recipient.",
+      "Create your account, add wishes to a list, and share your profile. Friends can pick a wish, contribute toward one, or send you a gift directly.",
   },
   {
-    question: "Who can see my birthday and lists?",
+    question: "Can friends contribute together?",
     answer:
-      "You choose each list’s visibility, and your profile settings let you hide the year of your birthday.",
+      "Yes. Friends can contribute toward a wish, so everyone can take part in making a more special gift happen.",
+  },
+  {
+    question: "Can I keep my birth year private?",
+    answer:
+      "Yes. Turn on Hide my birth year in your profile settings. Your public profile will show only the month and day.",
   },
 ];
 
@@ -75,8 +80,8 @@ export default function HomePage() {
         <section className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
           <div className="relative z-10">
             <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose-200/80 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700 shadow-sm">
-              <Sparkles aria-hidden="true" size={15} /> A little magic for every
-              birthday
+              <CakeSlice aria-hidden="true" size={15} /> Birthday wishes, gifts
+              & good company
             </p>
             <h1 className="max-w-2xl font-serif text-5xl font-semibold leading-[1.08] text-emerald-950 sm:text-6xl">
               Make room for the things that make them{" "}

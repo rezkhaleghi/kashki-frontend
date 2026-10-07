@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CakeSlice, Gift, Heart, WalletCards } from "lucide-react";
+import {
+  Bell,
+  CakeSlice,
+  ExternalLink,
+  Gift,
+  Heart,
+  WalletCards,
+} from "lucide-react";
 import { ApiError } from "@/lib/api/client";
 import { listGivenGifts, listReceivedGifts } from "@/lib/api/gifts";
 import { createList, listMyLists } from "@/lib/api/lists";
@@ -102,19 +109,34 @@ export default function DashboardPage() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 rounded-xl border border-rose-100 bg-white/75 px-3 py-2.5 text-sm font-semibold text-rose-800">
-            <CakeSlice aria-hidden="true" size={18} />
-            {userQuery.data?.dateOfBirth
-              ? new Intl.DateTimeFormat(undefined, {
-                  month: "long",
-                  day: "numeric",
-                  timeZone: "UTC",
-                }).format(
-                  new Date(
-                    `${userQuery.data.dateOfBirth.slice(0, 10)}T00:00:00Z`,
-                  ),
-                )
-              : "Add your birthday"}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2.5 rounded-xl border border-rose-100 bg-white/75 px-3 py-2.5 text-sm font-semibold text-rose-800">
+              <CakeSlice aria-hidden="true" size={18} />
+              {userQuery.data?.dateOfBirth
+                ? new Intl.DateTimeFormat(undefined, {
+                    month: "long",
+                    day: "numeric",
+                    timeZone: "UTC",
+                  }).format(
+                    new Date(
+                      `${userQuery.data.dateOfBirth.slice(0, 10)}T00:00:00Z`,
+                    ),
+                  )
+                : "Add your birthday"}
+            </div>
+            <Link
+              href={
+                userQuery.data?.userName
+                  ? `/u/${encodeURIComponent(userQuery.data.userName)}`
+                  : "/profile"
+              }
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-900"
+            >
+              {userQuery.data?.userName
+                ? "Show my public profile"
+                : "Set up my public profile"}
+              <ExternalLink aria-hidden="true" size={15} />
+            </Link>
           </div>
         </header>
 
@@ -195,14 +217,6 @@ export default function DashboardPage() {
                   />{" "}
                   Your wishlists
                 </h2>
-                {userQuery.data?.userName && (
-                  <Link
-                    href={`/u/${encodeURIComponent(userQuery.data.userName)}`}
-                    className="mt-1 inline-block text-sm font-medium text-rose-700"
-                  >
-                    View public profile
-                  </Link>
-                )}
               </div>
               <button
                 type="button"

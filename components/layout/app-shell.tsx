@@ -9,6 +9,7 @@ import { getMe } from "@/lib/api/users";
 import { ApiError } from "@/lib/api/client";
 import { LoadingState, ErrorState } from "@/components/shared/states";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { BackButton } from "@/components/shared/back-button";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: House },
@@ -153,6 +154,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
+          <div className="mb-4">
+            <BackButton fallbackHref="/" />
+          </div>
           {children}
         </div>
         <nav

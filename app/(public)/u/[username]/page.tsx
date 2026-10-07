@@ -9,10 +9,24 @@ import { getPublicUserProfile } from "@/lib/api/users";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { WishProgress } from "@/components/shared/wish-progress";
 import { LoadingState } from "@/components/shared/states";
+import { BackButton } from "@/components/shared/back-button";
 
 type PageProps = {
   params: Promise<{ username: string }>;
 };
+
+function formatPublicBirthday(value: string) {
+  const includesYear = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const dateValue = includesYear ? value : `2000-${value}`;
+  const date = new Date(`${dateValue}T00:00:00Z`);
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    day: "numeric",
+    ...(includesYear ? { year: "numeric" as const } : {}),
+    timeZone: "UTC",
+  }).format(date);
+}
 
 export default function PublicUserPage({ params }: PageProps) {
   return (
@@ -40,16 +54,19 @@ function PublicUserContent({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_5%_8%,_rgba(255,221,231,0.78),_transparent_30%),radial-gradient(ellipse_at_95%_38%,_rgba(190,240,226,0.65),_transparent_32%),linear-gradient(160deg,_#fffaf9_0%,_#f8fffc_100%)] px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-5 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 font-serif text-xl font-semibold text-emerald-950"
-          >
-            <span className="flex size-8 items-center justify-center rounded-xl bg-[#d52d69] text-sm text-white">
-              K
-            </span>
-            Kashki
-          </Link>
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <BackButton fallbackHref="/" />
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 font-serif text-xl font-semibold text-emerald-950"
+            >
+              <span className="flex size-8 items-center justify-center rounded-xl bg-[#d52d69] text-sm text-white">
+                K
+              </span>
+              Kashki
+            </Link>
+          </div>
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800/70">
             <Sparkles aria-hidden="true" size={14} /> A little wishbook
           </span>
@@ -109,7 +126,7 @@ function PublicUserContent({ params }: PageProps) {
                         Birthday
                       </p>
                       <p className="font-semibold text-emerald-950">
-                        {profile.birthday}
+                        {formatPublicBirthday(profile.birthday)}
                       </p>
                     </div>
                   </div>

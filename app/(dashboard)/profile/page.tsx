@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CakeSlice } from "lucide-react";
 import { ApiError } from "@/lib/api/client";
 import { changePassword, logout } from "@/lib/api/auth";
 import { deleteAvatar, uploadAvatar } from "@/lib/api/files";
@@ -37,6 +38,13 @@ function getError(error: Error | null) {
   return error instanceof ApiError
     ? error.message
     : "Could not connect to Kashki. Please try again.";
+}
+
+function formatFullBirthday(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${value.slice(0, 10)}T00:00:00Z`));
 }
 
 export default function ProfilePage() {
@@ -113,24 +121,47 @@ export default function ProfilePage() {
     onError: (error: Error) => setAvatarError(getError(error)),
   });
 
-  if (userQuery.isPending) return <LoadingState label="Loading your profile…" />;
-  if (userQuery.isError || !userQuery.data) return <ErrorState message={getError(userQuery.error)} />;
+  if (userQuery.isPending)
+    return <LoadingState label="Loading your profile…" />;
+  if (userQuery.isError || !userQuery.data)
+    return <ErrorState message={getError(userQuery.error)} />;
 
   const user = userQuery.data;
   const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(" ") || user.userName || user.email;
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    user.userName ||
+    user.email;
   const mutationError =
     getError(profileMutation.error) || getError(passwordMutation.error);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <p className="text-sm text-slate-500">Settings</p>
-        <h1 className="mt-1 text-3xl font-semibold text-slate-900">Your profile</h1>
-        <p className="mt-2 text-sm text-slate-600">Manage the details people see on your public birthday profile.</p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-500">Settings</p>
+          <h1 className="mt-1 text-3xl font-semibold text-slate-900">
+            Your profile
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Manage the details people see on your public birthday profile.
+          </p>
+        </div>
+        {user.dateOfBirth && (
+          <p className="inline-flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-2.5 text-sm font-semibold text-rose-800">
+            <CakeSlice aria-hidden="true" size={17} />
+            Your birthday · {formatFullBirthday(user.dateOfBirth)}
+          </p>
+        )}
       </header>
 
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{notice}</p>}
+      {notice && (
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+        >
+          {notice}
+        </p>
+      )}
       {mutationError && <ErrorState message={mutationError} />}
       {avatarError && <ErrorState message={avatarError} />}
 
@@ -175,12 +206,18 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">JPEG, PNG, WebP, or GIF; up to 5 MB.</p>
+        <p className="mt-3 text-xs text-slate-500">
+          JPEG, PNG, WebP, or GIF; up to 5 MB.
+        </p>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Personal details</h2>
-        <p className="mt-1 text-sm text-slate-500">Account email: {user.email}</p>
+        <h2 className="text-lg font-semibold text-slate-900">
+          Personal details
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Account email: {user.email}
+        </p>
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={profileForm.handleSubmit((values) => {
@@ -197,27 +234,52 @@ export default function ProfilePage() {
         >
           <label className="text-sm font-medium text-slate-700">
             First name
-            <input className={inputClass} {...profileForm.register("firstName")} />
+            <input
+              className={inputClass}
+              {...profileForm.register("firstName")}
+            />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Last name
-            <input className={inputClass} {...profileForm.register("lastName")} />
+            <input
+              className={inputClass}
+              {...profileForm.register("lastName")}
+            />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Username
-            <input className={inputClass} {...profileForm.register("userName")} />
-            {profileForm.formState.errors.userName && <span className="mt-1 block text-xs text-red-600">{profileForm.formState.errors.userName.message}</span>}
+            <input
+              className={inputClass}
+              {...profileForm.register("userName")}
+            />
+            {profileForm.formState.errors.userName && (
+              <span className="mt-1 block text-xs text-red-600">
+                {profileForm.formState.errors.userName.message}
+              </span>
+            )}
           </label>
           <label className="text-sm font-medium text-slate-700">
             Date of birth
-            <input className={inputClass} type="date" {...profileForm.register("dateOfBirth")} />
+            <input
+              className={inputClass}
+              type="date"
+              {...profileForm.register("dateOfBirth")}
+            />
           </label>
           <label className="text-sm font-medium text-slate-700 sm:col-span-2">
             Bio
-            <textarea className={`${inputClass} min-h-24 resize-y`} maxLength={1000} {...profileForm.register("bio")} />
+            <textarea
+              className={`${inputClass} min-h-24 resize-y`}
+              maxLength={1000}
+              {...profileForm.register("bio")}
+            />
           </label>
           <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
-            <input type="checkbox" className="size-4 accent-violet-600" {...profileForm.register("hideYear")} />
+            <input
+              type="checkbox"
+              className="size-4 accent-violet-600"
+              {...profileForm.register("hideYear")}
+            />
             Hide my birth year on my public profile
           </label>
           <div className="sm:col-span-2">
@@ -233,7 +295,9 @@ export default function ProfilePage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Change password</h2>
+        <h2 className="text-lg font-semibold text-slate-900">
+          Change password
+        </h2>
         <form
           className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end"
           onSubmit={passwordForm.handleSubmit((values) => {
@@ -243,8 +307,17 @@ export default function ProfilePage() {
         >
           <label className="flex-1 text-sm font-medium text-slate-700">
             New password
-            <input className={inputClass} type="password" autoComplete="new-password" {...passwordForm.register("password")} />
-            {passwordForm.formState.errors.password && <span className="mt-1 block text-xs text-red-600">{passwordForm.formState.errors.password.message}</span>}
+            <input
+              className={inputClass}
+              type="password"
+              autoComplete="new-password"
+              {...passwordForm.register("password")}
+            />
+            {passwordForm.formState.errors.password && (
+              <span className="mt-1 block text-xs text-red-600">
+                {passwordForm.formState.errors.password.message}
+              </span>
+            )}
           </label>
           <button
             type="submit"
@@ -258,10 +331,13 @@ export default function ProfilePage() {
 
       <section className="rounded-2xl border border-rose-100 bg-rose-50/50 p-6">
         <h2 className="text-lg font-semibold text-slate-900">Your account</h2>
-        <p className="mt-1 text-sm text-slate-600">Sign out of Kashki on this device.</p>
+        <p className="mt-1 text-sm text-slate-600">
+          Sign out of Kashki on this device.
+        </p>
         {logoutMutation.isError && (
           <p role="alert" className="mt-3 text-sm text-red-700">
-            {getError(logoutMutation.error) || "Could not log out. Please try again."}
+            {getError(logoutMutation.error) ||
+              "Could not log out. Please try again."}
           </p>
         )}
         <button

@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (userQuery.isPending) {
     return (
-      <main className="min-h-screen bg-[#f8f8f6] p-6">
+      <main className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-5xl pt-12">
           <LoadingState label="Checking your Kashki session…" />
         </div>
@@ -62,11 +62,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (userQuery.isError) {
     if (userQuery.error instanceof ApiError && userQuery.error.status === 401) {
-      return <main className="min-h-screen bg-[#f8f8f6] p-6" />;
+      return <main className="min-h-screen bg-slate-50 p-6" />;
     }
 
     return (
-      <main className="min-h-screen bg-[#f8f8f6] p-6">
+      <main className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-5xl pt-12">
           <ErrorState
             message={
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f8f6] lg:flex">
+    <div className="min-h-screen bg-slate-50 lg:flex">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
         <Link
           href="/"

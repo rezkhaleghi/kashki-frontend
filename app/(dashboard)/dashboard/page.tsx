@@ -77,7 +77,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-rose-100 bg-[linear-gradient(110deg,_#fff_0%,_#fff4f7_54%,_#e8f8f2_100%)] p-5 shadow-sm sm:p-6">
+        <header className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-rose-100 bg-[linear-gradient(110deg,_#fff_0%,_#ffeaea_54%,_#e8f4ea_100%)] p-5 shadow-sm sm:p-6">
           <div className="flex min-w-0 items-center gap-4">
             <UserAvatar
               src={userQuery.data?.avatar}

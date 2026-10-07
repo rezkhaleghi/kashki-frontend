@@ -49,7 +49,7 @@ function PublicUserContent({ params }: PageProps) {
     .filter(Boolean)
     .join(" ");
   return (
-    <main className="min-h-screen bg-[radial-gradient(ellipse_at_5%_8%,_rgba(255,221,231,0.78),_transparent_30%),radial-gradient(ellipse_at_95%_38%,_rgba(190,240,226,0.65),_transparent_32%),linear-gradient(160deg,_#fffaf9_0%,_#f8fffc_100%)] px-4 py-6 sm:px-8 sm:py-10">
+    <main className="min-h-screen bg-[radial-gradient(ellipse_at_5%_8%,_rgba(255,234,234,0.78),_transparent_30%),radial-gradient(ellipse_at_95%_38%,_rgba(184,216,190,0.65),_transparent_32%),linear-gradient(160deg,_#fffaf9_0%,_#e8f4ea_100%)] px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -58,7 +58,7 @@ function PublicUserContent({ params }: PageProps) {
               href="/"
               className="flex items-center gap-2.5 font-serif text-xl font-semibold text-emerald-950"
             >
-              <span className="flex size-8 items-center justify-center rounded-xl bg-[#d52d69] text-sm text-white">
+              <span className="flex size-8 items-center justify-center rounded-xl bg-violet-700 text-sm text-white">
                 K
               </span>
               Kashki
@@ -74,7 +74,7 @@ function PublicUserContent({ params }: PageProps) {
           </p>
         ) : profile ? (
           <>
-            <section className="relative overflow-hidden border-y border-emerald-900/10 bg-[linear-gradient(112deg,_rgba(255,241,245,0.94)_0%,_rgba(255,255,255,0.86)_48%,_rgba(220,247,238,0.9)_100%)] px-5 py-8 sm:px-10 sm:py-11">
+            <section className="relative overflow-hidden border-y border-emerald-900/10 bg-[linear-gradient(112deg,_rgba(255,234,234,0.94)_0%,_rgba(255,255,255,0.86)_48%,_rgba(232,244,234,0.9)_100%)] px-5 py-8 sm:px-10 sm:py-11">
               <div
                 aria-hidden="true"
                 className="absolute inset-y-0 right-0 hidden w-1/3 border-l border-white/70 bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.25)_0px,_rgba(255,255,255,0.25)_1px,_transparent_1px,_transparent_12px)] sm:block"
@@ -107,7 +107,7 @@ function PublicUserContent({ params }: PageProps) {
                   <div className="inline-flex items-center gap-3 rounded-2xl border border-rose-200/80 bg-white/85 px-4 py-3 shadow-sm">
                     <span
                       aria-hidden="true"
-                      className="flex size-10 items-center justify-center rounded-xl bg-[#fde5ed] text-[#c52860]"
+                      className="flex size-10 items-center justify-center rounded-xl bg-rose-100 text-rose-800"
                     >
                       <CakeSlice size={21} />
                     </span>
@@ -182,7 +182,7 @@ function PublicUserContent({ params }: PageProps) {
                           {wish.status !== "COMPLETED" && (
                             <Link
                               href={`/lists/${list.id}#wish-${encodeURIComponent(wish.id)}`}
-                              className="inline-flex shrink-0 items-center rounded-full bg-[#d52d69] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b92259]"
+                              className="inline-flex shrink-0 items-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800"
                             >
                               View & contribute
                             </Link>
@@ -297,7 +297,7 @@ function PublicDonationSection({
   }
 
   return (
-    <section className="relative my-5 overflow-hidden rounded-2xl border border-rose-200/80 bg-[linear-gradient(105deg,_#fff0f5_0%,_#fff_50%,_#e9f8f2_100%)] p-5 shadow-sm sm:p-6">
+    <section className="relative my-5 overflow-hidden rounded-2xl border border-rose-200/80 bg-[linear-gradient(105deg,_#ffeaea_0%,_#fff_50%,_#e8f4ea_100%)] p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-5">
         <div className="max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-rose-700">
@@ -315,7 +315,7 @@ function PublicDonationSection({
         <button
           type="button"
           onClick={handleDonateClick}
-          className="rounded-full bg-[#d52d69] px-6 py-3 text-sm font-bold text-white shadow-sm shadow-rose-900/15 transition hover:bg-[#b92259]"
+          className="rounded-full bg-violet-700 px-6 py-3 text-sm font-bold text-white shadow-sm shadow-rose-900/15 transition hover:bg-violet-800"
         >
           {isOpen ? "Close" : "DONATE"}
         </button>

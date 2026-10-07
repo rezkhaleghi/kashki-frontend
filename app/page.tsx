@@ -42,7 +42,7 @@ export default function HomePage() {
     "Your profile";
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_5%_12%,_rgba(255,221,231,0.85),_transparent_34%),radial-gradient(ellipse_at_92%_24%,_rgba(184,239,224,0.72),_transparent_34%),linear-gradient(155deg,_#fffaf8_0%,_#fff_52%,_#f0fbf7_100%)] text-slate-900">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_5%_12%,_rgba(255,234,234,0.85),_transparent_34%),radial-gradient(ellipse_at_92%_24%,_rgba(184,216,190,0.72),_transparent_34%),linear-gradient(155deg,_#fffaf9_0%,_#fff_52%,_#e8f4ea_100%)] text-slate-900">
       <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-9 lg:px-10">
         <header className="flex items-center justify-between gap-4 border-b border-emerald-900/10 pb-5">
           <Link
@@ -50,7 +50,7 @@ export default function HomePage() {
             className="flex items-center gap-3"
             aria-label="Kashki home"
           >
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#d52d69] font-serif text-xl font-bold text-white shadow-md shadow-rose-900/10">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-violet-700 font-serif text-xl font-bold text-white shadow-md shadow-rose-900/10">
               K
             </span>
             <span className="font-serif text-2xl font-semibold text-emerald-950">
@@ -69,7 +69,7 @@ export default function HomePage() {
             ) : (
               <Link
                 href="/login"
-                className="rounded-full bg-[#d52d69] px-5 py-2.5 text-xs font-bold tracking-[0.12em] text-white shadow-md shadow-rose-900/15 transition hover:bg-[#b92259]"
+                className="rounded-full bg-violet-700 px-5 py-2.5 text-xs font-bold tracking-[0.12em] text-white shadow-md shadow-rose-900/15 transition hover:bg-violet-800"
               >
                 SIGNIN
               </Link>
@@ -85,7 +85,7 @@ export default function HomePage() {
             </p>
             <h1 className="max-w-2xl font-serif text-5xl font-semibold leading-[1.08] text-emerald-950 sm:text-6xl">
               Make room for the things that make them{" "}
-              <span className="text-[#d52d69]">glow.</span>
+              <span className="text-violet-700">glow.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
               A softer way to share birthday wishes, gather around a gift, and
@@ -122,12 +122,12 @@ export default function HomePage() {
           >
             <div
               aria-hidden="true"
-              className="absolute -inset-5 -rotate-3 rounded-[2.5rem] border border-rose-200/70 bg-[#f9dbe5]/70"
+              className="absolute -inset-5 -rotate-3 rounded-[2.5rem] border border-rose-200/70 bg-rose-100/70"
             />
             <div className="relative rounded-[2rem] border border-emerald-900/10 bg-white/90 p-6 shadow-[0_28px_80px_-40px_rgba(31,92,75,0.4)] sm:p-8">
               <div className="flex items-center justify-between gap-4 border-b border-emerald-900/10 pb-5">
                 <div className="flex items-center gap-3">
-                  <span className="flex size-12 items-center justify-center rounded-2xl bg-[#dff5ee] text-emerald-800">
+                  <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
                     <Gift aria-hidden="true" size={23} />
                   </span>
                   <div>
@@ -141,7 +141,7 @@ export default function HomePage() {
                 </div>
                 <Heart
                   aria-hidden="true"
-                  className="shrink-0 text-[#d52d69]"
+                  className="shrink-0 text-violet-700"
                   size={21}
                 />
               </div>
@@ -170,7 +170,7 @@ export default function HomePage() {
                     key={step.number}
                     className="flex gap-4 py-4 first:pt-1 last:pb-1"
                   >
-                    <span className="font-serif text-lg font-semibold text-[#d52d69]">
+                    <span className="font-serif text-lg font-semibold text-violet-700">
                       {step.number}
                     </span>
                     <div>
@@ -184,7 +184,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-5 flex items-center gap-2 rounded-xl bg-[#e4f6f0] px-4 py-3 text-sm font-medium text-emerald-900">
+              <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-3 text-sm font-medium text-emerald-900">
                 <Sparkles aria-hidden="true" size={16} /> Small gestures, big
                 birthday energy.
               </div>
@@ -215,7 +215,7 @@ export default function HomePage() {
                     {faq.question}
                     <span
                       aria-hidden="true"
-                      className="font-serif text-xl text-[#d52d69] transition-transform group-open:rotate-45"
+                      className="font-serif text-xl text-violet-700 transition-transform group-open:rotate-45"
                     >
                       +
                     </span>

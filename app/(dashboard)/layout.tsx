@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#f8f8f6] p-6">
+        <main className="min-h-screen bg-slate-50 p-6">
           <div className="mx-auto max-w-5xl pt-12">
             <LoadingState label="Loading Kashki…" />
           </div>
